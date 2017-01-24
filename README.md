@@ -7,3 +7,10 @@ tower defense game
 - basic display
 - basic game loop
 - pause / quit
+
+01.24.17
+
+- update cell and grid init
+- basic build boundaries
+- point / index conversions
+- test pygame mouse motion

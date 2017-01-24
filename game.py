@@ -20,15 +20,15 @@ import sys
 
 class Game(object):
 
-    FPS = 30
+    FPS = 20
 
     HEADER =  60
     FOOTER =  60
     SIDEBAR = 300
 
-    WIDTH =   Grid.WIDTH + SIDEBAR
-    HEIGHT =  Grid.HEIGHT + HEADER + FOOTER
-    DIMS =    (WIDTH, HEIGHT)
+    WIDTH =  Grid.WIDTH + SIDEBAR
+    HEIGHT = Grid.HEIGHT + HEADER + FOOTER
+    DIMS =   (WIDTH, HEIGHT)
 
     ICON = 32
 
@@ -49,15 +49,11 @@ class Game(object):
 
     def __init__(self):
 
-        self.grid = Grid()
-
-        x, y = 0, Game.HEADER
-        self.grid.x = x
-        self.grid.y = y
-        self.grid.xy = (x, y)
+        self.grid = Grid(0, Game.HEADER)
 
         self.energy = 0
         self.mass = 0
+        self.mouse = (0, 0)
         self.time = 0
 
         self.clock = pygame.time.Clock()
@@ -73,8 +69,8 @@ class Game(object):
 
         x, y = point
 
-        xValid = bool((x > -1) and (x < Game.WIDTH))
-        yValid = bool((y > -1) and (y < Game.HEIGHT))
+        xValid = bool(-1 < x < Game.WIDTH)
+        yValid = bool(-1 < y < Game.HEIGHT)
 
         return bool(xValid and yValid)
 
@@ -91,7 +87,6 @@ class Game(object):
 
         font = pygame.font.SysFont(None, 32)
         cols, rows = Grid.CELLS
-        pad = (Game.HEADER - Game.ICON) // 2
 
         self.window.fill(h_000000)
 
@@ -123,14 +118,47 @@ class Game(object):
 
         # grid
 
+        i1, i2, i3, i4 = Grid.CORNERS
+        c1 = self.grid[i1]
+        c2 = self.grid[i2]
+        c3 = self.grid[i3]
+        c4 = self.grid[i4]
+
+        x1 = c1.x - 2
+        y1 = c1.y - 2
+        x2 = c2.x - 2
+        y2 = c2.y + Cell.DIM
+        x3 = c3.x + Cell.DIM
+        y3 = c3.y - 2
+        x4 = c4.x + Cell.DIM
+        y4 = c4.y + Cell.DIM
+        line = 10
+
+        pygame.draw.line(self.window, h_FFFFFF, (x1, y1), (x1 + line, y1), 2)
+        pygame.draw.line(self.window, h_FFFFFF, (x1, y1), (x1, y1 + line), 2)
+        pygame.draw.line(self.window, h_FFFFFF, (x2, y2), (x2 + line, y2), 2)
+        pygame.draw.line(self.window, h_FFFFFF, (x2, y2), (x2, y2 - line), 2)
+        pygame.draw.line(self.window, h_FFFFFF, (x3, y3), (x3 - line, y3), 2)
+        pygame.draw.line(self.window, h_FFFFFF, (x3, y3), (x3, y3 + line), 2)
+        pygame.draw.line(self.window, h_FFFFFF, (x4, y4), (x4 - line, y4), 2)
+        pygame.draw.line(self.window, h_FFFFFF, (x4, y4), (x4, y4 - line), 2)
+
+        index = self.grid.pointToIndex(self.mouse)
+        if self.grid.indexIsValid(index):
+            cell = self.grid[index]
+            if cell.base:
+                if cell.empty:
+                    color = h_006633
+                else:
+                    color = h_003366
+                pygame.draw.rect(self.window, color, cell.rect)
+
         for col in range(cols):
             for row in range(rows):
-                cell = self.grid.cells[col][row]
+                index = (col, row)
+                cell = self.grid[index]
 
-                # i = (col, row)
-                # x, y = Game.indexToPoint(i)
-                # rect = pygame.Rect(x, y, Cell.DIM, Cell.DIM)
-                # self.window.blit(img, rect)
+                ####
 
         # footer
 
@@ -176,8 +204,8 @@ class Game(object):
         while wait:
             for event in pygame.event.get():
                 if event.type == QUIT:
-                        quit = True
-                        wait = False
+                    quit = True
+                    wait = False
 
         if quit:
             pygame.quit()
@@ -199,7 +227,6 @@ class Game(object):
                 run = False
             else:
                 for event in pygame.event.get():
-                    print(event)
                     if event.type == QUIT:
                         quit = True
                         run = False
@@ -208,6 +235,8 @@ class Game(object):
                             self.pause()
                     elif event.type == MOUSEBUTTONUP:
                         self.click(event.pos, event.button)
+                    elif event.type == MOUSEMOTION:
+                        self.mouse = event.pos
                     elif event.type == USEREVENT + 1:
                         self.time = self.time + 1
 

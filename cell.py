@@ -10,6 +10,8 @@
 from bool import *
 from const import *
 
+import pygame
+
 # --------------------------------------------------------------------------------------------------------------------
 
 class Cell(object):
@@ -18,15 +20,13 @@ class Cell(object):
 
     # ----------------------------------------
 
-    def __init__(self):
+    def __init__(self, x, y):
 
         self.col = 0
         self.row = 0
-        self.index = (0, 0)
 
-        self.x = 0
-        self.y = 0
-        self.xy = (0, 0)
+        self.x = x
+        self.y = y
 
         self.base = False
         self.build = None
@@ -50,6 +50,27 @@ class Cell(object):
     def __str__(self):
 
         return str(self.index)
+
+    # ----------------------------------------
+
+    @property
+    def index(self):
+
+        return self.col, self.row
+
+    # ----------------------------------------
+
+    @property
+    def rect(self):
+
+        return pygame.Rect(self.x, self.y, Cell.DIM, Cell.DIM)
+
+    # ----------------------------------------
+
+    @property
+    def xy(self):
+
+        return self.x, self.y
 
     # ----------------------------------------
 

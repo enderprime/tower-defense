@@ -11,30 +11,39 @@ from bool import *
 from cell import *
 from const import *
 
+import pygame
+
 # --------------------------------------------------------------------------------------------------------------------
 
 class Grid(object):
 
     ADJACENT = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
 
-    BASE =   (21, 15)
-    SPACE =  (3, 3)
-    CELLS =  (BASE[0] + (SPACE[0] * 2), BASE[1] + (SPACE[1] * 2))
+    BASE =    (21, 15)
+    SPACE =   (3, 3)
+    CELLS =   (BASE[0] + (SPACE[0] * 2), BASE[1] + (SPACE[1] * 2))
 
-    WIDTH =  CELLS[0] * Cell.DIM
-    HEIGHT = CELLS[1] * Cell.DIM
+    CORNERS = \
+        (
+            (SPACE[0], SPACE[1]),
+            (SPACE[0], BASE[1] + SPACE[1] - 1),
+            (BASE[0] + SPACE[0] - 1, SPACE[1]),
+            (BASE[0] + SPACE[0] - 1, BASE[1] + SPACE[1] - 1)
+        )
+
+    WIDTH =   CELLS[0] * Cell.DIM
+    HEIGHT =  CELLS[1] * Cell.DIM
 
     # ----------------------------------------
 
-    def __init__(self):
+    def __init__(self, x, y):
 
         baseCols, baseRows = Grid.BASE
         gridCols, gridRows = Grid.CELLS
         spaceCols, spaceRows = Grid.SPACE
 
-        self.x = 0
-        self.y = 0
-        self.xy = (0, 0)
+        self.x = x
+        self.y = y
 
         self.base = []
         self.cells = []
@@ -48,18 +57,13 @@ class Grid(object):
 
             for row in range(gridRows):
 
-                cell = Cell()
+                x = self.x + (col * Cell.DIM)
+                y = self.y + (row * Cell.DIM)
+
+                cell = Cell(x, y)
 
                 cell.col = col
                 cell.row = row
-                cell.index = (col, row)
-
-                x = col * Cell.DIM
-                y = row * Cell.DIM
-
-                cell.x = x
-                cell.y = y
-                cell.xy = (x, y)
 
                 colBase = bool((spaceCols - 1) < col < (baseCols + spaceCols))
                 rowBase = bool((spaceRows - 1) < row < (baseRows + spaceRows))
@@ -137,14 +141,28 @@ class Grid(object):
 
     # ----------------------------------------
 
+    @property
+    def rect(self):
+
+        return pygame.Rect(self.x, self.y, Grid.WIDTH, Grid.HEIGHT)
+
+    # ----------------------------------------
+
+    @property
+    def xy(self):
+
+        return self.x, self.y
+
+    # ----------------------------------------
+
     @classmethod
     def indexIsValid(cls, index):
 
         col, row = index
         cols, rows = Grid.CELLS
 
-        colValid = bool((col > -1) and (col < cols))
-        rowValid = bool((row > -1) and (row < rows))
+        colValid = bool(-1 < col < cols)
+        rowValid = bool(-1 < row < rows)
 
         return bool(colValid and rowValid)
 
@@ -176,6 +194,8 @@ class Grid(object):
 
         if self.pointIsValid(point):
             x, y = point
+            x = x - self.x
+            y = y - self.y
             col = x // Cell.DIM
             row = y // Cell.DIM
             return col, row
