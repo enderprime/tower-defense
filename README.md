@@ -13,4 +13,4 @@ tower defense game
 - update cell and grid init
 - basic build boundaries
 - point / index conversions
-- test pygame mouse motion
+- test pygame mouse events

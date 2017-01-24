@@ -20,7 +20,7 @@ import sys
 
 class Game(object):
 
-    FPS = 20
+    FPS = 30
 
     HEADER =  60
     FOOTER =  60
@@ -134,13 +134,11 @@ class Game(object):
         y4 = c4.y + Cell.DIM
         line = 10
 
-        pygame.draw.line(self.window, h_FFFFFF, (x1, y1), (x1 + line, y1), 2)
+        pygame.draw.line(self.window, h_FFFFFF, (x1, y1), (x3, y3), 2)
+        pygame.draw.line(self.window, h_FFFFFF, (x2, y2), (x4, y4), 2)
         pygame.draw.line(self.window, h_FFFFFF, (x1, y1), (x1, y1 + line), 2)
-        pygame.draw.line(self.window, h_FFFFFF, (x2, y2), (x2 + line, y2), 2)
         pygame.draw.line(self.window, h_FFFFFF, (x2, y2), (x2, y2 - line), 2)
-        pygame.draw.line(self.window, h_FFFFFF, (x3, y3), (x3 - line, y3), 2)
         pygame.draw.line(self.window, h_FFFFFF, (x3, y3), (x3, y3 + line), 2)
-        pygame.draw.line(self.window, h_FFFFFF, (x4, y4), (x4 - line, y4), 2)
         pygame.draw.line(self.window, h_FFFFFF, (x4, y4), (x4, y4 - line), 2)
 
         index = self.grid.pointToIndex(self.mouse)

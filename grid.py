@@ -20,7 +20,7 @@ class Grid(object):
     ADJACENT = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
 
     BASE =    (21, 15)
-    SPACE =   (3, 3)
+    SPACE =   (3, 2)
     CELLS =   (BASE[0] + (SPACE[0] * 2), BASE[1] + (SPACE[1] * 2))
 
     CORNERS = \
