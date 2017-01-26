@@ -10,7 +10,12 @@ tower defense game
 
 01.24.17
 
-- update cell and grid init
+- updated cell and grid init
 - basic build boundaries
 - point / index conversions
 - test pygame mouse events
+
+01.25.17
+
+- updated coordinate calcs
+- added docstrings
