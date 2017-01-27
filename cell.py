@@ -4,7 +4,7 @@
 [D] tower defense cell class
 [E] ender.prime@gmail.com
 [F] cell.py
-[V] 01.25.17
+[V] 01.26.17
 """
 
 from bool import *
@@ -13,24 +13,26 @@ from const import *
 # --------------------------------------------------------------------------------------------------------------------
 
 class Cell(object):
+    """
+    represents a single game board square
+    """
 
     DIM = 36
     HALF = 18
 
     # ----------------------------------------
 
-    def __init__(self, x, y):
-
-        self.col = 0
-        self.row = 0
+    def __init__(self, x, y):   # (x, y) == center
 
         self.x = x
         self.y = y
 
         self.base = False
+        self.col = 0
         self.build = None
         self.open = True
         self.path = False
+        self.row = 0
 
     # ----------------------------------------
 

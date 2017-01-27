@@ -4,7 +4,7 @@
 [D] tower defense grid class
 [E] ender.prime@gmail.com
 [F] grid.py
-[V] 01.25.17
+[V] 01.26.17
 """
 
 from bool import *
@@ -14,29 +14,31 @@ from const import *
 # --------------------------------------------------------------------------------------------------------------------
 
 class Grid(object):
+    """
+    represents game board using 2d array of cells
+    """
 
     BASE = (21, 15)
-    SPACE = (3, 2)
+    SPACE = (3, 1)
 
     # ----------------------------------------
 
-    def __init__(self, x, y):
-
-        cols, rows = Grid.indexes()
+    def __init__(self, x, y):   # (x, y) == top left
 
         self.x = x
         self.y = y
 
         self.base = []
         self.cells = []
+        self.path = []
         self.space = []
 
+        cols, rows = Grid.indexes()
         for col in range(cols):
 
             listBase = []
             listCells = []
             listSpace = []
-
             for row in range(rows):
 
                 x = self.west + (col * Cell.DIM) + Cell.HALF
@@ -59,8 +61,6 @@ class Grid(object):
 
             self.cells.append(listCells)
             self.space.append(listSpace)
-
-        self.path = []
 
     # ----------------------------------------
 
@@ -106,27 +106,6 @@ class Grid(object):
             s = s + ']\n'
 
         return s
-
-    # ----------------------------------------
-
-    @classmethod
-    def adjacent(cls, index):
-        """
-        :param index: (column, row)
-        :return: list of valid adjacent indexes
-        """
-        baseCol, baseRow = index
-        lst = []
-
-        for n in ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)):
-            colStep, rowStep = n
-            adjCol = baseCol + colStep
-            adjRow = baseRow + rowStep
-            adjIndex = (adjCol, adjRow)
-            if Grid.indexIsValid(adjIndex):
-                lst.append(adjIndex)
-
-        return lst
 
     # ----------------------------------------
 
@@ -260,10 +239,7 @@ class Grid(object):
         col, row = index
         cols, rows = Grid.indexes()
 
-        colValid = bool(-1 < col < cols)
-        rowValid = bool(-1 < row < rows)
-
-        return bool(colValid and rowValid)
+        return bool((-1 < col < cols) and (-1 < row < rows))
 
     # ----------------------------------------
 
@@ -430,3 +406,5 @@ class Grid(object):
         for lst in self.cells:
             for cell in lst:
                 cell.reset()
+
+        self.path = []

@@ -4,7 +4,7 @@
 [D] tower defense constants
 [E] ender.prime@gmail.com
 [F] const.py
-[V] 01.22.17
+[V] 01.26.17
 """
 
 # constant file used to speed development
@@ -12,25 +12,6 @@
 
 PATH_GAME = 'E:/CODE/PI/tower-defense/'
 PATH_IMG = PATH_GAME + 'img/'
-
-# IMG_0 = PATH_IMG + '0.png'
-# IMG_1 = PATH_IMG + '1.png'
-# IMG_2 = PATH_IMG + '2.png'
-# IMG_3 = PATH_IMG + '3.png'
-# IMG_4 = PATH_IMG + '4.png'
-# IMG_5 = PATH_IMG + '5.png'
-# IMG_6 = PATH_IMG + '6.png'
-# IMG_7 = PATH_IMG + '7.png'
-# IMG_8 = PATH_IMG + '8.png'
-#
-# IMG_CLEAR =    PATH_IMG + 'clear.png'
-# IMG_CLOCK =    PATH_IMG + 'clock.png'
-# IMG_FLAG =     PATH_IMG + 'flag.png'
-# IMG_GRID =     PATH_IMG + 'grid.png'
-# IMG_MINE =     PATH_IMG + 'mine.png'
-# IMG_MINES =    PATH_IMG + 'mines.png'
-# IMG_MISTAKE =  PATH_IMG + 'mistake.png'
-# IMG_QUESTION = PATH_IMG + 'question.png'
 
 # ----------------------------------------
 

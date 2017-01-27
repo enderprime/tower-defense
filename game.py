@@ -4,7 +4,7 @@
 [D] tower defense game class
 [E] ender.prime@gmail.com
 [F] game.py
-[V] 01.25.17
+[V] 01.26.17
 """
 
 from bool import *
@@ -19,6 +19,9 @@ import sys
 # --------------------------------------------------------------------------------------------------------------------
 
 class Game(object):
+    """
+    game logic and pygame display
+    """
 
     FPS = 30
 
@@ -31,18 +34,19 @@ class Game(object):
     def __init__(self):
 
         self.clock = pygame.time.Clock()
-        self.window = pygame.display.set_mode((Game.width(), Game.height()))
-
-        pygame.display.set_caption('TOWER DEFENSE')
-        pygame.time.set_timer(pygame.USEREVENT + 1, 1000)
-
+        self.grid = Grid(0, Game.HEADER)
         self.energy = 0
-        self.gridLines = True
         self.mass = 0
         self.mouse = (0, 0)
+        self.pause = True
+        self.showCreepPath = True
+        self.showGridLines = True
         self.time = 0
+        self.window = pygame.display.set_mode((Game.width(), Game.height()))
 
-        self.grid = Grid(0, Game.HEADER)
+        self.window.fill(h_000000)
+        pygame.display.set_caption('TOWER DEFENSE')
+        pygame.time.set_timer(pygame.USEREVENT + 1, 1000)
 
     # ----------------------------------------
 
@@ -74,21 +78,22 @@ class Game(object):
                 'CELL_BLOCK': h_990033,
                 'CELL_OPEN':  h_006633,
                 'CELL_HOVER': h_003366,
-                'FOOT_BG':    h_333333,
+                'FOOT_BG':    h_000000,
                 'FOOT_BODY':  h_FFFFFF,
                 'FOOT_HEAD':  h_FFFFFF,
-                'GEN_BLUE':   h_003366,
-                'GEN_GREEN':  h_006633,
-                'GEN_RED':    h_990033,
                 'GRID_BASE':  h_FFFFFF,
                 'GRID_BG':    h_000000,
                 'GRID_BODY':  h_FFFFFF,
                 'GRID_GRID':  h_333333,
                 'GRID_HEAD':  h_FFFFFF,
-                'HEAD_BG':    h_333333,
+                'GRID_PATH':  h_CC6600,
+                'HEAD_BG':    h_000000,
                 'HEAD_BODY':  h_FFFFFF,
                 'HEAD_HEAD':  h_FFFFFF,
-                'SIDE_BG':    h_333333,
+                'MAIN_BLUE':  h_003366,
+                'MAIN_GREEN': h_006633,
+                'MAIN_RED':   h_990033,
+                'SIDE_BG':    h_000000,
                 'SIDE_BODY':  h_FFFFFF,
                 'SIDE_HEAD':  h_FFFFFF
             }
@@ -114,7 +119,7 @@ class Game(object):
 
     # ----------------------------------------
 
-    def click(self, point, button):
+    def eventClick(self, point, button):
         """
         event handling for mouse clicks
         :param point: mouse (x, y) passed from pygame event loop
@@ -124,6 +129,24 @@ class Game(object):
         pass
 
         ####
+
+    # ----------------------------------------
+
+    def eventKey(self, key):
+        """
+        event handling for keyboard
+        :param key: keyboard input passed from pygame event loop
+        :return: None
+        """
+        if key == K_ESCAPE:
+            self.pause = not self.pause
+            ####
+        elif key == K_SPACE:
+            self.pause = not self.pause
+        elif key == K_g:
+            self.showGridLines = not self.showGridLines
+        elif key == K_p:
+            self.showCreepPath = not self.showCreepPath
 
     # ----------------------------------------
 
@@ -144,16 +167,19 @@ class Game(object):
         :return: none
         """
 
-        # base grid
+        # background
+        color = self.colors['GRID_BG']
+        rect = pygame.Rect(self.grid.x, self.grid.y, Grid.width(), Grid.height())
+        self.window.fill(color, rect)
 
+        # base grid
         color = self.colors['GRID_GRID']
-        if self.gridLines:
+        if self.showGridLines:
             for lst in self.grid.base:
                 for cell in lst:
                     pygame.draw.rect(self.window, color, (cell.west, cell.north, Cell.DIM, Cell.DIM), 1)
 
         # base border
-
         c1, c2 = Grid.baseBounds()
         west, north = self.grid[c1].NW
         east, south = self.grid[c2].SE
@@ -171,7 +197,6 @@ class Game(object):
         pygame.draw.line(self.window, color, (east, south), (east, south - 10), 2)
 
         # cell highlighting
-
         index = self.grid.pointToIndex(self.mouse)
         if self.grid.indexIsValid(index):
             cell = self.grid[index]
@@ -188,8 +213,6 @@ class Game(object):
         # towers
 
         # creeps
-
-        ####
 
     # ----------------------------------------
 
@@ -222,9 +245,6 @@ class Game(object):
         """
         ####
 
-        new = False
-        quit = False
-
         wait = True
         while wait:
             for event in pygame.event.get():
@@ -241,7 +261,6 @@ class Game(object):
         """
         new = False
         quit = False
-
         run = True
         while run:
 
@@ -253,20 +272,27 @@ class Game(object):
                         quit = True
                         run = False
                     elif event.type == KEYUP:
-                        if event.key == K_ESCAPE:
-                            self.pause()
+                        self.eventKey(event.key)
                     elif event.type == MOUSEBUTTONUP:
-                        self.click(event.pos, event.button)
+                        self.eventClick(event.pos, event.button)
                     elif event.type == MOUSEMOTION:
                         self.mouse = event.pos
                     elif event.type == USEREVENT + 1:
                         self.time = self.time + 1
 
-            self.window.fill(h_000000)
-            self.drawHeader()
-            self.drawGrid()
-            self.drawFooter()
-            self.drawSidebar()
+            if self.pause:
+                font = self.fonts['GRID_HEAD']
+                x, y = self.grid.center
+                rect = pygame.Rect(x - 55, y - 20, 110, 40)
+                self.window.fill(h_000000, rect)
+                text = font.render('PAUSED', True, h_FFFFFF)
+                self.window.blit(text, (x - 45, y - 10))
+            else:
+                self.drawHeader()
+                self.drawGrid()
+                self.drawFooter()
+                self.drawSidebar()
+
             self.clock.tick(Game.FPS)
             pygame.display.update()
 
@@ -289,7 +315,13 @@ class Game(object):
 
         self.energy = 100
         self.mass = 100
+        self.pause = True
         self.time = 0
+
+        self.drawHeader()
+        self.drawGrid()
+        self.drawFooter()
+        self.drawSidebar()
 
         self.loop()
 
@@ -307,22 +339,18 @@ class Game(object):
         self.window.fill(h_000000, rect)
 
         text = font.render('PAUSED', True, h_FFFFFF)
-        self.window.blit(text, (x - 45, y - 20))
+        self.window.blit(text, (x - 45, y - 10))
 
         pygame.display.update()
 
-        quit = False
         pause = True
         while pause:
 
             for event in pygame.event.get():
                 if event.type == QUIT:
-                    quit = True
-                    pause = False
+                    pygame.quit()
+                    sys.exit()
                 elif event.type == KEYUP:
-                    if event.key == K_ESCAPE:
+                    key = event.key
+                    if (key == K_ESCAPE) or (key == K_SPACE):
                         pause = False
-
-        if quit:
-            pygame.quit()
-            sys.exit()
