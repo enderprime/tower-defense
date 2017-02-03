@@ -6,16 +6,24 @@ tower defense game
 - cell, grid, game classes
 - basic display
 - basic game loop
-- pause / quit
 
 01.24.17
 
-- updated cell and grid init
-- basic build boundaries
+- base build boundaries
 - point / index conversions
-- test pygame mouse events
+- basic input event handling
 
 01.25.17
 
 - updated coordinate calcs
 - added docstrings
+
+01.30.17
+
+- A* pathfinder
+- creep and tower classes
+
+02.03.17
+
+- creep and tower images
+- basic wave functions

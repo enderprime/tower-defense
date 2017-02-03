@@ -4,12 +4,15 @@
 [D] tower defense grid class
 [E] ender.prime@gmail.com
 [F] grid.py
-[V] 01.26.17
+[V] 02.03.17
 """
 
 from bool import *
 from cell import *
 from const import *
+
+import copy
+import math
 
 # --------------------------------------------------------------------------------------------------------------------
 
@@ -17,50 +20,48 @@ class Grid(object):
     """
     represents game board using 2d array of cells
     """
-
-    BASE = (21, 15)
-    SPACE = (3, 1)
+    BASE = (19, 13)
+    SPACE = (2, 1)
 
     # ----------------------------------------
 
-    def __init__(self, x, y):   # (x, y) == top left
+    def __init__(self, x = 0, y = 0):
 
+        # (x, y) == top left point
         self.x = x
         self.y = y
 
-        self.base = []
+        self.base = {}
         self.cells = []
-        self.path = []
-        self.space = []
+        self.space = {}
 
         cols, rows = Grid.indexes()
         for col in range(cols):
-
-            listBase = []
-            listCells = []
-            listSpace = []
+            lst = []
             for row in range(rows):
+                x = self.west + (col * Cell.DIM) + Cell.half() - 1
+                y = self.north + (row * Cell.DIM) + Cell.half() - 1
 
-                x = self.west + (col * Cell.DIM) + Cell.HALF
-                y = self.north + (row * Cell.DIM) + Cell.HALF
-
-                cell = Cell(x, y)
+                cell = Cell()
                 cell.col = col
                 cell.row = row
+                cell.x = x
+                cell.y = y
 
-                if Grid.indexIsBase(cell.index):
+                colBase = bool(Grid.baseWest() <= col <= Grid.baseEast())
+                rowBase = bool(Grid.baseNorth() <= row <= Grid.baseSouth())
+                if bool(colBase and rowBase):
                     cell.base = True
-                    listBase.append(cell)
+                    self.base.update({cell.index: None})
                 else:
-                    listSpace.append(cell)
+                    self.space.update({cell.index: None})
+                lst.append(cell)
+            self.cells.append(lst)
 
-                listCells.append(cell)
-
-            if bool(listBase):
-                self.base.append(listBase)
-
-            self.cells.append(listCells)
-            self.space.append(listSpace)
+        self.fuzz = 1 + (1 / (cols * rows))
+        self.start = self.pathStart()
+        self.goal = self.pathGoal()
+        self.path = [self.start] + self.pathfinder(self.start, self.goal)
 
     # ----------------------------------------
 
@@ -110,11 +111,59 @@ class Grid(object):
     # ----------------------------------------
 
     @classmethod
+    def adjacent(cls, index, diag = False, path = False):
+        """
+        :param index: (col, row)
+        :param diag: true if diagonals allowed
+        :param path: true if pathfinding restrictions
+        :return: list of valid adjacent indexes
+        """
+        colBase, rowBase = index
+        lst = []
+
+        for n in ((1, 0), (0, 1), (0, -1), (-1, 0)):
+            colStep, rowStep = n
+            col = colBase + colStep
+            row = rowBase + rowStep
+            adj = (col, row)
+            if Grid.indexIsValid(adj):
+                lst.append(adj)
+
+        if diag:
+            for n in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
+                colStep, rowStep = n
+                colAdj = colBase + colStep
+                rowAdj = rowBase + rowStep
+                adj = (colAdj, rowAdj)
+                if Grid.indexIsValid(adj):
+                    if path:
+                        c1, r1 = (colAdj, rowBase)
+                        c2, r2 = (colBase, rowAdj)
+                        if grid.cells[c1][r1].open and grid.cells[c2][r2].open:
+                            lst.append(adj)
+                    else:
+                        lst.append(adj)
+
+        return lst
+
+    # ----------------------------------------
+
+    @classmethod
     def baseBounds(cls):
         """
         :return: base area index bounds: ((west, north), (east, south))
         """
         return Grid.baseNW(), Grid.baseSE()
+
+    # ----------------------------------------
+
+    @classmethod
+    def baseCenter(cls):
+        """
+        :return: base area center index: (column, row)
+        """
+        cols, rows = Grid.indexes()
+        return (cols // 2), (rows // 2)
 
     # ----------------------------------------
 
@@ -212,21 +261,6 @@ class Grid(object):
         rows = (2 * spaceRows) + baseRows
 
         return cols, rows
-
-    # ----------------------------------------
-
-    @classmethod
-    def indexIsBase(cls, index):
-        """
-        :param index: (column, row)
-        :return: true if index is within base area bounds
-        """
-        col, row = index
-
-        colBase = bool(Grid.baseWest() <= col <= Grid.baseEast())
-        rowBase = bool(Grid.baseNorth() <= row <= Grid.baseSouth())
-
-        return bool(colBase and rowBase)
 
     # ----------------------------------------
 
@@ -355,6 +389,27 @@ class Grid(object):
 
     # ----------------------------------------
 
+    def hx(self, start, goal, diag = False):
+        """
+        :param start: (x, y)
+        :param goal: (x, y)
+        :param diag: true if diagonals allowed
+        :return: heuristic: distance to goal
+        """
+        xStart, yStart = start
+        xGoal, yGoal = goal
+        a = xStart - xGoal
+        b = yStart - yGoal
+
+        if diag:
+            distance = math.hypot(a, b)
+        else:
+            distance = abs(a) + abs(b)
+
+        return distance * self.fuzz
+
+    # ----------------------------------------
+
     def indexToPoint(self, index):
         """
         :param index: (column, row)
@@ -368,6 +423,104 @@ class Grid(object):
 
     # ----------------------------------------
 
+    def pathfinder(self, start, goal, diag = False):
+        """
+        :param start: (x, y)
+        :param goal: (x, y)
+        :param diag: true if diagonals allowed
+        :return: list of indexes on path to goal
+        """
+        lst = []
+        openSet = {}
+        closedSet = {}
+
+        if not (start == goal):
+            grid = copy.deepcopy(self.cells)
+            xStart, yStart = start
+            xGoal, yGoal = goal
+
+            node = grid[xStart][yStart]
+            node.gx = 0
+            node.hx = self.hx(start, goal, diag)
+            node.parent = None
+            openSet.update({start: node.fx})
+
+            while bool(openSet) and (not (goal in openSet)):
+                current = min(openSet, key = openSet.get)
+                x, y = current
+                del openSet[current]
+                closedSet.update({current: None})
+
+                for index in Grid.adjacent(current, diag, True):
+                        xAdj, yAdj = index
+                        node = grid[xAdj][yAdj]
+                        if node.base and node.open:
+                            gx = grid[x][y].gx + 1
+                            if gx < node.gx:
+                                if index in openSet: del openSet[index]
+                                if index in closedSet: del closedSet[index]
+                            if (not (index in openSet)) and (not (index in closedSet)):
+                                node.gx = gx
+                                node.hx = self.hx(index, goal, diag)
+                                node.parent = current
+                                openSet.update({index: node.fx})
+
+            node = grid[xGoal][yGoal]
+            if bool(node.parent):
+                lst.append(goal)
+                while bool(node.parent):
+                    if not (node.parent == start):
+                        lst.append(node.parent)
+                    x, y = node.parent
+                    node = grid[x][y]
+                lst.reverse()
+
+        return lst
+
+    # ----------------------------------------
+
+    def pathGoal(self):
+        """
+        :return: path goal index: (column, row)
+        """
+        cols, rows = Grid.BASE
+        col = Grid.baseEast()
+        row = Grid.baseCenter()[1]
+
+        if not self.cells[col][row].open:
+            for i in range(rows // 2):
+                row = row + i
+                if self.cells[col][row].open:
+                    break
+                row = row - i
+                if self.cells[col][row].open:
+                    break
+
+        return col, row
+
+    # ----------------------------------------
+
+    def pathStart(self):
+        """
+        :return: path starting index: (column, row)
+        """
+        cols, rows = Grid.BASE
+        col = Grid.baseWest()
+        row = Grid.baseCenter()[1]
+
+        if not self.cells[col][row].open:
+            for i in range(rows // 2):
+                row = row + i
+                if self.cells[col][row].open:
+                    break
+                row = row - i
+                if self.cells[col][row].open:
+                    break
+
+        return col, row
+
+    # ----------------------------------------
+
     def pointIsValid(self, point):
         """
         :param point: (x, y)
@@ -375,8 +528,8 @@ class Grid(object):
         """
         x, y = point
 
-        xValid = bool(self.west <= x < self.east)
-        yValid = bool(self.north <= y < self.south)
+        xValid = bool(self.west <= x <= self.east)
+        yValid = bool(self.north <= y <= self.south)
 
         return bool(xValid and yValid)
 
@@ -407,4 +560,6 @@ class Grid(object):
             for cell in lst:
                 cell.reset()
 
-        self.path = []
+        self.start = self.pathStart()
+        self.goal = self.pathGoal()
+        self.path = [self.start] + self.pathfinder(self.start, self.goal)

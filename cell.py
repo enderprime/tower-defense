@@ -4,11 +4,13 @@
 [D] tower defense cell class
 [E] ender.prime@gmail.com
 [F] cell.py
-[V] 01.26.17
+[V] 02.03.17
 """
 
 from bool import *
 from const import *
+
+import math
 
 # --------------------------------------------------------------------------------------------------------------------
 
@@ -16,35 +18,30 @@ class Cell(object):
     """
     represents a single game board square
     """
-
-    DIM = 36
-    HALF = 18
+    DIM = 48
 
     # ----------------------------------------
 
-    def __init__(self, x, y):   # (x, y) == center
+    def __init__(self):
 
-        self.x = x
-        self.y = y
+        self.col = 0
+        self.row = 0
+        self.x = 0
+        self.y = 0
 
         self.base = False
-        self.col = 0
+        self.gx = math.inf
+        self.hx = math.inf
+        self.parent = None
+
         self.build = None
         self.open = True
-        self.path = False
-        self.row = 0
-
-    # ----------------------------------------
-
-    def __len__(self):
-
-        return 1
 
     # ----------------------------------------
 
     def __repr__(self):
 
-        return 'Cell' + str(self.xy)
+        return 'Cell(' + str(self.col) + ', ' + str(self.row) + ', ' + str(self.x) + ', ' + str(self.y) + ')'
 
     # ----------------------------------------
 
@@ -52,6 +49,15 @@ class Cell(object):
 
         return str(self.index)
 
+    # ----------------------------------------
+    
+    @classmethod
+    def half(cls):
+        """ 
+        :return: size in pixels // 2
+        """
+        return Cell.DIM // 2
+    
     # ----------------------------------------
 
     @property
@@ -64,11 +70,11 @@ class Cell(object):
     # ----------------------------------------
 
     @property
-    def index(self):
+    def fx(self):
         """
-        :return: grid index: (col, row)
+        :return: pathfinder fx == gx + hx
         """
-        return self.col, self.row
+        return self.gx + self.hx
 
     # ----------------------------------------
 
@@ -77,7 +83,16 @@ class Cell(object):
         """
         :return: east x value
         """
-        return self.x + Cell.HALF - 1
+        return self.x + Cell.half() - 1
+
+    # ----------------------------------------
+
+    @property
+    def index(self):
+        """
+        :return: grid index: (column, row)
+        """
+        return self.col, self.row
 
     # ----------------------------------------
 
@@ -86,7 +101,7 @@ class Cell(object):
         """
         :return: north y value
         """
-        return self.y - Cell.HALF
+        return self.y - Cell.half()
 
     # ----------------------------------------
 
@@ -113,7 +128,7 @@ class Cell(object):
         """
         :return: south y value
         """
-        return self.y + Cell.HALF - 1
+        return self.y + Cell.half() - 1
 
     # ----------------------------------------
 
@@ -140,7 +155,7 @@ class Cell(object):
         """
         :return: west x value
         """
-        return self.x - Cell.HALF
+        return self.x - Cell.half()
 
     # ----------------------------------------
 
@@ -159,4 +174,3 @@ class Cell(object):
         """
         self.build = None
         self.open = True
-        self.path = False

@@ -4,15 +4,10 @@
 [D] tower defense game
 [E] ender.prime@gmail.com
 [F] tower-defense.py
-[V] 01.23.17
+[V] 01.28.17
 """
 
-from bool import *
-from cell import *
-from const import *
 from game import *
-from grid import *
-
 import pygame
 
 # --------------------------------------------------------------------------------------------------------------------

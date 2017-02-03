@@ -4,14 +4,16 @@
 [D] tower defense game class
 [E] ender.prime@gmail.com
 [F] game.py
-[V] 01.26.17
+[V] 02.03.17
 """
 
 from bool import *
-from cell import *
 from const import *
+from creeps import *
 from grid import *
+from towers import *
 
+import math
 import pygame
 from pygame.locals import *
 import sys
@@ -20,33 +22,117 @@ import sys
 
 class Game(object):
     """
-    game logic and pygame display
+    core game logic
     """
-
     FPS = 30
+    HEADER = 56
+    FOOTER = 72
+    SIDEBAR = 200
 
-    HEADER = 60
-    FOOTER = 60
-    SIDEBAR = 300
+    COLORS = \
+        {
+            'CELL_BLOCK':  (128, 36, 36),       # red
+            'CELL_BUILD':  (32, 64, 128),       # blue
+            'CELL_HOVER':  (255, 255, 255),     # white
+            'CELL_OPEN':   (51, 102, 51),       # green
+            'FOOT_BG':     (0, 0, 0),           # black
+            'FOOT_BODY':   (255, 255, 255),     # white
+            'FOOT_HEAD':   (255, 255, 255),     # white
+            'GRID_BASE':   (255, 255, 255),     # white
+            'GRID_BG':     (0, 0, 0),           # black
+            'GRID_BODY':   (255, 255, 255),     # white
+            'GRID_GRID':   (24, 24, 24),        # grey
+            'GRID_HEAD':   (255, 255, 255),     # white
+            'GRID_PATH':   (204, 102, 0),       # orange
+            'HEAD_BG':     (0, 0, 0),           # black
+            'HEAD_BODY':   (255, 255, 255),     # white
+            'HEAD_HEAD':   (255, 255, 255),     # white
+            'RANK_2':      (51, 102, 51),       # green
+            'RANK_3':      (32, 64, 128),       # blue
+            'RANK_4':      (102, 0, 102),       # purple
+            'RANK_5':      (128, 36, 36),       # red
+            'SIDE_BG':     (0, 0, 0),           # black
+            'SIDE_BODY':   (255, 255, 255),     # white
+            'SIDE_HEAD':   (255, 255, 255),     # white
+        }
+
+    IMAGES = \
+        {
+            IMG_CREEP_01: pygame.image.load(IMG_CREEP_01),
+
+            IMG_EFFECT_01: pygame.image.load(IMG_EFFECT_01),
+            IMG_EFFECT_02: pygame.image.load(IMG_EFFECT_02),
+            IMG_EFFECT_03: pygame.image.load(IMG_EFFECT_03),
+            IMG_EFFECT_04: pygame.image.load(IMG_EFFECT_04),
+            IMG_EFFECT_05: pygame.image.load(IMG_EFFECT_05),
+            IMG_EFFECT_06: pygame.image.load(IMG_EFFECT_06),
+
+            IMG_ICON: pygame.image.load(IMG_ICON),
+
+            IMG_MASS_00: pygame.image.load(IMG_MASS_00),
+            IMG_MASS_01: pygame.image.load(IMG_MASS_01),
+            IMG_MASS_02: pygame.image.load(IMG_MASS_02),
+            IMG_MASS_03: pygame.image.load(IMG_MASS_03),
+            IMG_MASS_04: pygame.image.load(IMG_MASS_04),
+            IMG_MASS_05: pygame.image.load(IMG_MASS_05),
+            IMG_MASS_06: pygame.image.load(IMG_MASS_06),
+            IMG_MASS_07: pygame.image.load(IMG_MASS_07),
+            IMG_MASS_08: pygame.image.load(IMG_MASS_08),
+            IMG_MASS_09: pygame.image.load(IMG_MASS_09),
+            IMG_MASS_10: pygame.image.load(IMG_MASS_10),
+            IMG_MASS_11: pygame.image.load(IMG_MASS_11),
+            IMG_MASS_12: pygame.image.load(IMG_MASS_12),
+            IMG_MASS_13: pygame.image.load(IMG_MASS_13),
+            IMG_MASS_14: pygame.image.load(IMG_MASS_14),
+            IMG_MASS_15: pygame.image.load(IMG_MASS_15),
+            IMG_MASS_16: pygame.image.load(IMG_MASS_16),
+            IMG_MASS_17: pygame.image.load(IMG_MASS_17),
+            IMG_MASS_18: pygame.image.load(IMG_MASS_18),
+            IMG_MASS_19: pygame.image.load(IMG_MASS_19),
+            IMG_MASS_20: pygame.image.load(IMG_MASS_20),
+
+            IMG_PAUSE: pygame.image.load(IMG_PAUSE),
+            IMG_PLAY: pygame.image.load(IMG_PLAY),
+
+            IMG_TOWER_0: pygame.image.load(IMG_TOWER_0),
+            IMG_TOWER_1_1: pygame.image.load(IMG_TOWER_1_1),
+            IMG_TOWER_2_1: pygame.image.load(IMG_TOWER_2_1),
+            IMG_TOWER_3_1: pygame.image.load(IMG_TOWER_3_1),
+            IMG_TOWER_4_1: pygame.image.load(IMG_TOWER_4_1),
+            IMG_TOWER_5_1: pygame.image.load(IMG_TOWER_5_1),
+            IMG_TOWER_6_1: pygame.image.load(IMG_TOWER_6_1),
+            IMG_TOWER_7_1: pygame.image.load(IMG_TOWER_7_1),
+            IMG_TOWER_8_1: pygame.image.load(IMG_TOWER_8_1),
+            IMG_TOWER_9: pygame.image.load(IMG_TOWER_9),
+        }
 
     # ----------------------------------------
 
     def __init__(self):
 
         self.clock = pygame.time.Clock()
+        self.creeps = Creeps()
+        self.debug = True
         self.grid = Grid(0, Game.HEADER)
-        self.energy = 0
-        self.mass = 0
         self.mouse = (0, 0)
-        self.pause = True
-        self.showCreepPath = True
-        self.showGridLines = True
-        self.time = 0
-        self.window = pygame.display.set_mode((Game.width(), Game.height()))
+        self.showGrid = False
+        self.showPath = True
+        self.towers = Towers()
 
-        self.window.fill(h_000000)
+
+        pygame.display.set_icon(Game.IMAGES[IMG_ICON])
+        self.window = pygame.display.set_mode((Game.width(), Game.height()))
         pygame.display.set_caption('TOWER DEFENSE')
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000)
+        
+        self.building = None
+        self.energy = 100
+        self.mass = 20
+        self.pause = True
+        self.select = None
+        self.speed = 100
+        self.time = 0
+        self.wave = 1
 
     # ----------------------------------------
 
@@ -69,95 +155,33 @@ class Game(object):
     # ----------------------------------------
 
     @property
-    def colors(self):
+    def btnPlay(self):
         """
-        :return: dictionary with display colors
+        :return: play button bounding box points ((west, north), (east, south))
         """
-        return \
-            {
-                'CELL_BLOCK': h_990033,
-                'CELL_OPEN':  h_006633,
-                'CELL_HOVER': h_003366,
-                'FOOT_BG':    h_000000,
-                'FOOT_BODY':  h_FFFFFF,
-                'FOOT_HEAD':  h_FFFFFF,
-                'GRID_BASE':  h_FFFFFF,
-                'GRID_BG':    h_000000,
-                'GRID_BODY':  h_FFFFFF,
-                'GRID_GRID':  h_333333,
-                'GRID_HEAD':  h_FFFFFF,
-                'GRID_PATH':  h_CC6600,
-                'HEAD_BG':    h_000000,
-                'HEAD_BODY':  h_FFFFFF,
-                'HEAD_HEAD':  h_FFFFFF,
-                'MAIN_BLUE':  h_003366,
-                'MAIN_GREEN': h_006633,
-                'MAIN_RED':   h_990033,
-                'SIDE_BG':    h_000000,
-                'SIDE_BODY':  h_FFFFFF,
-                'SIDE_HEAD':  h_FFFFFF
-            }
+        x = self.grid.width() + (Game.SIDEBAR // 2) - 12
+        y = (Game.HEADER // 2) - 12
+
+        return (x, y), (x + 23, y + 23)
 
     # ----------------------------------------
 
     @property
     def fonts(self):
         """
-        :return: dictionary with display fonts
+        :return: dictionary of fonts
         """
         return \
             {
-                'FOOT_BODY': pygame.font.SysFont(None, 24),
-                'FOOT_HEAD': pygame.font.SysFont(None, 32),
-                'GRID_BODY': pygame.font.SysFont(None, 24),
-                'GRID_HEAD': pygame.font.SysFont(None, 32),
-                'HEAD_BODY': pygame.font.SysFont(None, 24),
-                'HEAD_HEAD': pygame.font.SysFont(None, 32),
-                'SIDE_BODY': pygame.font.SysFont(None, 24),
-                'SIDE_HEAD': pygame.font.SysFont(None, 32)
+                'FOOT_BODY': pygame.font.SysFont('lucida console', 20),
+                'FOOT_HEAD': pygame.font.SysFont('lucida console', 28),
+                'GRID_BODY': pygame.font.SysFont('lucida console', 20),
+                'GRID_HEAD': pygame.font.SysFont('lucida console', 28),
+                'HEAD_BODY': pygame.font.SysFont('lucida console', 20),
+                'HEAD_HEAD': pygame.font.SysFont('lucida console', 28),
+                'SIDE_BODY': pygame.font.SysFont('lucida console', 20),
+                'SIDE_HEAD': pygame.font.SysFont('lucida console', 28)
             }
-
-    # ----------------------------------------
-
-    def eventClick(self, point, button):
-        """
-        event handling for mouse clicks
-        :param point: mouse (x, y) passed from pygame event loop
-        :param button: mouse button passed from pygame event loop
-        :return: none
-        """
-        pass
-
-        ####
-
-    # ----------------------------------------
-
-    def eventKey(self, key):
-        """
-        event handling for keyboard
-        :param key: keyboard input passed from pygame event loop
-        :return: None
-        """
-        if key == K_ESCAPE:
-            self.pause = not self.pause
-            ####
-        elif key == K_SPACE:
-            self.pause = not self.pause
-        elif key == K_g:
-            self.showGridLines = not self.showGridLines
-        elif key == K_p:
-            self.showCreepPath = not self.showCreepPath
-
-    # ----------------------------------------
-
-    def drawHeader(self):
-        """
-        draw interface header on screen
-        :return: none
-        """
-        color = self.colors['HEAD_BG']
-        rect = pygame.Rect(0, 0, Game.width(), Game.HEADER)
-        self.window.fill(color, rect)
 
     # ----------------------------------------
 
@@ -168,51 +192,100 @@ class Game(object):
         """
 
         # background
-        color = self.colors['GRID_BG']
+        color = Game.COLORS['GRID_BG']
         rect = pygame.Rect(self.grid.x, self.grid.y, Grid.width(), Grid.height())
         self.window.fill(color, rect)
 
-        # base grid
-        color = self.colors['GRID_GRID']
-        if self.showGridLines:
-            for lst in self.grid.base:
-                for cell in lst:
-                    pygame.draw.rect(self.window, color, (cell.west, cell.north, Cell.DIM, Cell.DIM), 1)
+        # grid lines
+        color = Game.COLORS['GRID_GRID']
+        if self.showGrid:
+            for n in self.grid.base:
+                cell = self.grid[n]
+                if cell.open:
+                    rect = (cell.west, cell.north, Cell.DIM, Cell.DIM)
+                    pygame.draw.rect(self.window, color, rect, 1)
 
-        # base border
-        c1, c2 = Grid.baseBounds()
-        west, north = self.grid[c1].NW
-        east, south = self.grid[c2].SE
-        east = east + 1
-        north = north - 2
-        south = south + 1
-        west = west - 2
-
-        color = self.colors['GRID_BASE']
-        pygame.draw.line(self.window, color, (west, north), (east, north), 2)
-        pygame.draw.line(self.window, color, (west, south), (east, south), 2)
-        pygame.draw.line(self.window, color, (west, north), (west, north + 10), 2)
-        pygame.draw.line(self.window, color, (east, north), (east, north + 10), 2)
-        pygame.draw.line(self.window, color, (west, south), (west, south - 10), 2)
-        pygame.draw.line(self.window, color, (east, south), (east, south - 10), 2)
-
-        # cell highlighting
+        # hover
         index = self.grid.pointToIndex(self.mouse)
         if self.grid.indexIsValid(index):
             cell = self.grid[index]
             if cell.base:
-                if cell.build:
-                    color = self.colors['CELL_HOVER']
-                else:
-                    if cell.open:
-                        color = self.colors['CELL_OPEN']
+                if notNull(self.building):
+                    self.select = None
+                    if isNull(cell.build) and cell.open:
+                        color = Game.COLORS['CELL_OPEN']
+                        rect = pygame.Rect(cell.west + 2, cell.north + 2, Cell.DIM - 4, Cell.DIM - 4)
                     else:
-                        color = self.colors['CELL_BLOCK']
-                self.window.fill(color, (cell.west, cell.north, Cell.DIM, Cell.DIM))
+                        color = Game.COLORS['CELL_BLOCK']
+                        rect = pygame.Rect(cell.west, cell.north, Cell.DIM, Cell.DIM)
+                    self.window.fill(color, rect)
+
+        # selected
+        if notNull(self.select):
+            cell = self.grid[self.select]
+            color = Game.COLORS['CELL_BUILD']
+            rect = pygame.Rect(cell.west, cell.north, Cell.DIM, Cell.DIM)
+            self.window.fill(color, rect)
+
+        # base border
+        color = Game.COLORS['GRID_BASE']
+        c1, c2 = Grid.baseBounds()
+        west, north = self.grid[c1].NW
+        east, south = self.grid[c2].SE
+        east = east + 3
+        north = north - 4
+        south = south + 3
+        west = west - 4
+        pygame.draw.line(self.window, color, (west, north), (east, north), 2)
+        pygame.draw.line(self.window, color, (west, south), (east, south), 2)
+        pygame.draw.line(self.window, color, (west, north), (west, north + 11), 2)
+        pygame.draw.line(self.window, color, (east, north), (east, north + 11), 2)
+        pygame.draw.line(self.window, color, (west, south), (west, south - 11), 2)
+        pygame.draw.line(self.window, color, (east, south), (east, south - 11), 2)
+
+        # creep path
+        if self.showPath:
+            color = Game.COLORS['GRID_PATH']
+            for index in self.grid.path:
+                p = self.grid[index].xy
+                pygame.draw.circle(self.window, color, p, 3)
 
         # towers
+        if bool(self.towers.active):
+            for _id, tower in self.towers.active.items():
+                x, y = self.grid[tower.index].NW
+                rect = pygame.Rect(x, y, Cell.DIM, Cell.DIM)
+                img = Game.IMAGES[tower.imgTower]
+                if not (tower.angle == 0):
+                    img = pygame.transform.rotate(img, math.degrees(tower.angle))
+                self.window.blit(img, rect)
 
         # creeps
+
+    # ----------------------------------------
+
+    def drawHeader(self):
+        """
+        draw interface header on screen
+        :return: none
+        """
+        color = Game.COLORS['HEAD_BG']
+        rect = pygame.Rect(0, 0, Game.width(), Game.HEADER)
+        self.window.fill(color, rect)
+
+        # mass
+        if self.mass < 10:
+            img = PATH_IMG + 'mass-0' + str(self.mass) + '.png'
+        else:
+            img = PATH_IMG + 'mass-' + str(self.mass) + '.png'
+
+        xCenter, yCenter = self.grid.center
+        x = xCenter - 141
+        y = (Game.HEADER // 2) - 14
+        rect = pygame.Rect(x, y, 282, 28)
+        self.window.blit(Game.IMAGES[img], rect)
+
+        ####
 
     # ----------------------------------------
 
@@ -221,9 +294,11 @@ class Game(object):
         draw interface footer on screen
         :return: none
         """
-        color = self.colors['FOOT_BG']
+        color = Game.COLORS['FOOT_BG']
         rect = pygame.Rect(0, Game.HEADER + Grid.height(), Game.width(), Game.FOOTER)
         self.window.fill(color, rect)
+
+        ####
 
     # ----------------------------------------
 
@@ -232,9 +307,88 @@ class Game(object):
         draw interface sidebar on screen
         :return: none
         """
-        color = self.colors['SIDE_BG']
+        color = Game.COLORS['SIDE_BG']
         rect = pygame.Rect(Grid.width(), 0, Game.SIDEBAR, Game.height())
         self.window.fill(color, rect)
+
+        # play button
+        if self.pause:
+            img = Game.IMAGES[IMG_PLAY]
+        else:
+            img = Game.IMAGES[IMG_PAUSE]
+        nw, se = self.btnPlay
+        x1, y1 = nw
+        x2, y2 = se
+        rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
+        self.window.blit(img, rect)
+
+        # debug info
+        if self.debug:
+            color = self.COLORS['SIDE_BODY']
+            font = self.fonts['SIDE_BODY']
+
+            x = self.width() - 80
+            y = self.height() - 30
+            p = (x, y)
+            text = font.render('FPS', True, color)
+            self.window.blit(text, p)
+
+            x = x + 40
+            p = (x, y)
+            text = font.render(str(int(self.clock.get_fps())), True, color)
+            self.window.blit(text, p)
+        
+    # ----------------------------------------
+
+    def eventClick(self, point, button):
+        """
+        event handling for mouse clicks
+        :param point: mouse (x, y) from pygame event loop
+        :param button: mouse button from pygame event loop
+        :return: none
+        """
+        if button == 1:
+            index = self.grid.pointToIndex(point)
+            if self.grid.indexIsValid(index):
+                cell = self.grid[index]
+                if cell.base:
+                    if notNull(self.building) and isNull(cell.build) and cell.open:
+                        col, row = index
+                        self.towers.build(self.building, col, row)      # NTS: update with valid path logic
+                        cell.build = self.building
+                        if not (self.building == 9):
+                            cell.open = False
+                    elif notNull(cell.build) and (not cell.open):
+                        self.select = index
+        elif button == 3:
+            if notNull(self.building): self.building = None
+            if notNull(self.select): self.select = None
+
+    # ----------------------------------------
+
+    def eventKey(self, key):
+        """
+        event handling for keyboard
+        :param key: keyboard input from pygame event loop
+        :return: none
+        """
+        if key == K_ESCAPE:
+            if notNull(self.building): self.building = None
+            if notNull(self.select): self.select = None
+        elif key == K_SPACE: self.pause = not self.pause
+        elif key == K_0:
+            if self.debug: self.building = 0
+        elif key == K_1: self.building = 1
+        elif key == K_2: self.building = 2
+        elif key == K_3: self.building = 3
+        elif key == K_4: self.building = 4
+        elif key == K_5: self.building = 5
+        elif key == K_6: self.building = 6
+        elif key == K_7: self.building = 7
+        elif key == K_8: self.building = 8
+        elif key == K_9: self.building = 9
+        elif key == K_g: self.showGrid = not self.showGrid
+        elif key == K_p: self.showPath = not self.showPath
 
     # ----------------------------------------
 
@@ -243,6 +397,7 @@ class Game(object):
         game over logic
         :return: none
         """
+
         ####
 
         wait = True
@@ -262,8 +417,8 @@ class Game(object):
         new = False
         quit = False
         run = True
-        while run:
 
+        while run:
             if self.mass < 1:
                 run = False
             else:
@@ -280,21 +435,20 @@ class Game(object):
                     elif event.type == USEREVENT + 1:
                         self.time = self.time + 1
 
-            if self.pause:
-                font = self.fonts['GRID_HEAD']
-                x, y = self.grid.center
-                rect = pygame.Rect(x - 55, y - 20, 110, 40)
-                self.window.fill(h_000000, rect)
-                text = font.render('PAUSED', True, h_FFFFFF)
-                self.window.blit(text, (x - 45, y - 10))
-            else:
-                self.drawHeader()
-                self.drawGrid()
-                self.drawFooter()
-                self.drawSidebar()
+            self.drawGrid()
+            self.drawHeader()
+            self.drawFooter()
+            self.drawSidebar()
 
-            self.clock.tick(Game.FPS)
+            if not self.pause:
+                pass
+
+                # towers
+
+                # creeps
+
             pygame.display.update()
+            self.clock.tick(Game.FPS)
 
         if quit:
             pygame.quit()
@@ -311,46 +465,15 @@ class Game(object):
         new game logic
         :return: none
         """
-        self.grid.reset()
 
+        self.building = None
         self.energy = 100
-        self.mass = 100
+        self.grid.reset()
+        self.mass = 20
         self.pause = True
+        self.select = None
+        self.speed = 100
         self.time = 0
-
-        self.drawHeader()
-        self.drawGrid()
-        self.drawFooter()
-        self.drawSidebar()
+        self.wave = 1
 
         self.loop()
-
-    # ----------------------------------------
-
-    def pause(self):
-        """
-        pause logic
-        :return: none
-        """
-        font = self.fonts['GRID_HEAD']
-        x, y = self.grid.center
-
-        rect = pygame.Rect(x - 55, y - 20, 110, 40)
-        self.window.fill(h_000000, rect)
-
-        text = font.render('PAUSED', True, h_FFFFFF)
-        self.window.blit(text, (x - 45, y - 10))
-
-        pygame.display.update()
-
-        pause = True
-        while pause:
-
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    pygame.quit()
-                    sys.exit()
-                elif event.type == KEYUP:
-                    key = event.key
-                    if (key == K_ESCAPE) or (key == K_SPACE):
-                        pause = False
