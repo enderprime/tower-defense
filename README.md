@@ -7,23 +7,21 @@ tower defense game
 - basic display
 - basic game loop
 
-01.24.17
-
-- base build boundaries
-- point / index conversions
-- basic input event handling
-
-01.25.17
-
-- updated coordinate calcs
-- added docstrings
-
 01.30.17
 
 - A* pathfinder
 - creep and tower classes
+- tower build functionality
 
-02.03.17
+02.04.17
 
 - creep and tower images
-- basic wave functions
+- updated A* for better diagonals
+
+02.10.17
+
+- split A* into separate methods for creep vs grid
+- updated adjacent, and hx methods for speed
+- basic spawnWave() functionality
+- creep run-time movement logic
+- victory / loss conditions

@@ -4,7 +4,7 @@
 [D] tower defense cell class
 [E] ender.prime@gmail.com
 [F] cell.py
-[V] 02.03.17
+[V] 02.08.17
 """
 
 from bool import *
@@ -18,7 +18,7 @@ class Cell(object):
     """
     represents a single game board square
     """
-    DIM = 48
+    DIM = 48    # pixels
 
     # ----------------------------------------
 
@@ -36,6 +36,7 @@ class Cell(object):
 
         self.build = None
         self.open = True
+        self.path = False
 
     # ----------------------------------------
 
@@ -63,9 +64,9 @@ class Cell(object):
     @property
     def bounds(self):
         """
-        :return: bounding box points: ((west, north), (east, south))
+        :return: bounding box points: (west, north, east, south)
         """
-        return self.NW, self.SE
+        return self.NW + self.SE
 
     # ----------------------------------------
 
