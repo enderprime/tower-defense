@@ -4,7 +4,7 @@
 [D] tower defense game class
 [E] ender.prime@gmail.com
 [F] game.py
-[V] 02.10.17
+[V] 02.13.17
 """
 
 from bool import *
@@ -25,46 +25,70 @@ class Game(object):
     """
     core game logic
     """
-    FPS = 25            # frames per second
-    TICK = 1000 // 25   # time in ms per game loop
+    FPS = 25                # frames per second
+    TICK = 1000 // FPS      # time in ms per game loop
 
-    HEADER = 84         # pixels
-    FOOTER = 133        # pixels
-    SIDEBAR = 250       # pixels
+    HEADER = 84             # pixels
+    FOOTER = 133            # pixels
+    SIDEBAR = 250           # pixels
+
+    WIDTH = Grid.WIDTH + SIDEBAR                # width in pixels
+    HEIGHT = HEADER + Grid.HEIGHT + FOOTER      # height in pixels
+
+    # next button bounds
+    BTN_NEXT_X = 1100
+    BTN_NEXT_Y = (HEADER // 2) - 18
+    BTN_NEXT = (BTN_NEXT_X, BTN_NEXT_Y, BTN_NEXT_X + 27, BTN_NEXT_Y + 27)   # (west, north, east, south)
+
+    # play button bounds
+    BTN_PLAY_X = 1050
+    BTN_PLAY_Y = (HEADER // 2) - 18
+    BTN_PLAY = (BTN_PLAY_X, BTN_PLAY_Y, BTN_PLAY_X + 27, BTN_PLAY_Y + 27)   # (west, north, east, south)
 
     WAVE_MAX = 100
     WAVE_TIMER = 30     # seconds
 
+    COLOR_BLACK = (0, 0, 0)
+    COLOR_BLUE = (32, 64, 128)
+    COLOR_GREEN = (51, 102, 51)
+    COLOR_GREY_1 = (24, 24, 24)
+    COLOR_GREY_2 = (36, 36, 36)
+    COLOR_ORANGE = (204, 102, 0)
+    COLOR_PURPLE = (102, 0, 102)
+    COLOR_RED = (128, 28, 28)
+    COLOR_WHITE = (255, 255, 255)
+
     COLORS = \
         {
-            'CELL_BLOCK':  (128, 36, 36),       # red
-            'CELL_BUILD':  (32, 64, 128),       # blue
-            'CELL_HOVER':  (255, 255, 255),     # white
-            'CELL_OPEN':   (51, 102, 51),       # green
+            'CELL_BLOCK':  COLOR_RED,
+            'CELL_BUILD':  COLOR_BLUE,
+            'CELL_HOVER':  COLOR_WHITE,
+            'CELL_OPEN':   COLOR_GREEN,
 
-            'FOOT_BG':     (0, 0, 0),           # black
-            'FOOT_BODY':   (255, 255, 255),     # white
-            'FOOT_HEAD':   (255, 255, 255),     # white
+            'FOOT_BG':     COLOR_BLACK,
+            'FOOT_BODY':   COLOR_WHITE,
+            'FOOT_HEAD':   COLOR_WHITE,
 
-            'GRID_BASE':   (255, 255, 255),     # white
-            'GRID_BG':     (0, 0, 0),           # black
-            'GRID_BODY':   (255, 255, 255),     # white
-            'GRID_GRID':   (24, 24, 24),        # grey
-            'GRID_HEAD':   (255, 255, 255),     # white
-            'GRID_PATH':   (204, 102, 0),       # orange
+            'GRID_BASE':   COLOR_WHITE,
+            'GRID_BG':     COLOR_BLACK,
+            'GRID_BODY':   COLOR_WHITE,
+            'GRID_GRID':   COLOR_GREY_1,
+            'GRID_HEAD':   COLOR_WHITE,
+            'GRID_PATH':   COLOR_ORANGE,
 
-            'HEAD_BG':     (0, 0, 0),           # black
-            'HEAD_BODY':   (255, 255, 255),     # white
-            'HEAD_HEAD':   (255, 255, 255),     # white
+            'HEAD_BG':     COLOR_BLACK,
+            'HEAD_BODY':   COLOR_WHITE,
+            'HEAD_HEAD':   COLOR_WHITE,
 
-            'RANK_2':      (51, 102, 51),       # green
-            'RANK_3':      (32, 64, 128),       # blue
-            'RANK_4':      (102, 0, 102),       # purple
-            'RANK_5':      (128, 36, 36),       # red
+            'RANK_1':      COLOR_GREY_2,
+            'RANK_2':      COLOR_GREEN,
+            'RANK_3':      COLOR_BLUE,
+            'RANK_4':      COLOR_PURPLE,
+            'RANK_5':      COLOR_RED,
 
-            'SIDE_BG':     (0, 0, 0),           # black
-            'SIDE_BODY':   (255, 255, 255),     # white
-            'SIDE_HEAD':   (255, 255, 255),     # white
+            'SIDE_BG':     COLOR_BLACK,
+            'SIDE_BODY':   COLOR_WHITE,
+            'SIDE_HEAD':   COLOR_WHITE,
         }
 
     IMAGES = \
@@ -116,13 +140,13 @@ class Game(object):
             IMG_TOWER_5_1: pygame.image.load(IMG_TOWER_5_1),
             IMG_TOWER_6_1: pygame.image.load(IMG_TOWER_6_1),
             IMG_TOWER_7_1: pygame.image.load(IMG_TOWER_7_1),
-            IMG_TOWER_8_1: pygame.image.load(IMG_TOWER_8_1),
-            # IMG_TOWER_9: pygame.image.load(IMG_TOWER_9),
+            IMG_TOWER_8: pygame.image.load(IMG_TOWER_8)
         }
 
+    # creep waves: key = wave number, value = list of creep groups: (creep ai, creep count)
     WAVES = \
         {
-            0: [(1, 20)],   # wave number: list of (creep ai, creep count)
+            0: [(1, 20)],
             1: [(1, 20)]
         }
 
@@ -139,7 +163,7 @@ class Game(object):
         self.showPath = True
 
         pygame.display.set_icon(Game.IMAGES[IMG_ICON])
-        self.window = pygame.display.set_mode((Game.width(), Game.height()))
+        self.window = pygame.display.set_mode((Game.WIDTH, Game.HEIGHT))
         pygame.display.set_caption('TOWER DEFENSE')
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000)
 
@@ -165,48 +189,6 @@ class Game(object):
         self.towers = {}            # dictionary of active towers in game
         self.wave = 0               # current creep wave, increments on spawnWave()
         self.waveTimer = 0          # countdown to next creep wave, resets to WAVE_TIMER on spawnWave()
-
-    # ----------------------------------------
-
-    @classmethod
-    def height(cls):
-        """
-        :return: height in pixels
-        """
-        return Game.HEADER + Grid.height() + Game.FOOTER
-
-    # ----------------------------------------
-
-    @classmethod
-    def width(cls):
-        """
-        :return: width in pixels
-        """
-        return Grid.width() + Game.SIDEBAR
-
-    # ----------------------------------------
-
-    @property
-    def btnNext(self):
-        """
-        :return: next button bounding box points (west, north, east, south)
-        """
-        x = 1100
-        y = (Game.HEADER // 2) - 18
-
-        return x, y, x + 27, y + 27
-
-    # ----------------------------------------
-
-    @property
-    def btnPlay(self):
-        """
-        :return: play button bounding box points (west, north, east, south)
-        """
-        x = 1050
-        y = (Game.HEADER // 2) - 18
-
-        return x, y, x + 27, y + 27
 
     # ----------------------------------------
 
@@ -280,7 +262,7 @@ class Game(object):
         :return: none
         """
         color = Game.COLORS['HEAD_BG']
-        rect = pygame.Rect(0, 0, Game.width(), Game.HEADER)
+        rect = pygame.Rect(0, 0, Game.WIDTH, Game.HEADER)
         self.window.fill(color, rect)
 
         color = self.COLORS['HEAD_BODY']
@@ -349,13 +331,13 @@ class Game(object):
         else:
             img = Game.IMAGES[IMG_PAUSE]
 
-        x1, y1, x2, y2 = self.btnPlay
+        x1, y1, x2, y2 = Game.BTN_PLAY
         rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
         self.window.blit(img, rect)
 
         # next button
         img = Game.IMAGES[IMG_NEXT]
-        x1, y1, x2, y2 = self.btnNext
+        x1, y1, x2, y2 = Game.BTN_NEXT
         rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
         self.window.blit(img, rect)
 
@@ -367,7 +349,7 @@ class Game(object):
         :return: none
         """
         color = Game.COLORS['FOOT_BG']
-        rect = pygame.Rect(0, Game.HEADER + Grid.height(), Game.width(), Game.FOOTER)
+        rect = pygame.Rect(0, Game.HEADER + Grid.HEIGHT, Game.WIDTH, Game.FOOTER)
         self.window.fill(color, rect)
 
         ####
@@ -382,7 +364,7 @@ class Game(object):
 
         # background
         color = Game.COLORS['GRID_BG']
-        rect = pygame.Rect(self.grid.x, self.grid.y, Grid.width(), Grid.height())
+        rect = pygame.Rect(self.grid.x, self.grid.y, Grid.WIDTH, Grid.HEIGHT)
         self.window.fill(color, rect)
 
         # grid lines
@@ -418,7 +400,7 @@ class Game(object):
 
         # base border
         color = Game.COLORS['GRID_BASE']
-        west, north, east, south = Grid.baseBounds()
+        west, north, east, south = Grid.BASE_BOUNDS
         west, north = self.grid.cells[west][north].NW
         east, south = self.grid.cells[east][south].SE
         east = east + 3
@@ -445,7 +427,7 @@ class Game(object):
                 x, y = self.grid[tower.index].NW
                 rect = pygame.Rect(x, y, Cell.DIM, Cell.DIM)
                 img = Game.IMAGES[tower.imgTower]
-                if not (tower.angle == 0):
+                if tower.angle != 0:
                     img = pygame.transform.rotate(img, math.degrees(tower.angle))
                 self.window.blit(img, rect)
 
@@ -455,7 +437,7 @@ class Game(object):
                 x, y = creep.NW
                 rect = pygame.Rect(x, y, creep.size, creep.size)
                 img = Game.IMAGES[creep.image]
-                if not (creep.angle == 0):
+                if creep.angle != 0:
                     img = pygame.transform.rotate(img, math.degrees(creep.angle))
                 self.window.blit(img, rect)
 
@@ -467,7 +449,7 @@ class Game(object):
         :return: none
         """
         color = Game.COLORS['SIDE_BG']
-        rect = pygame.Rect(Grid.width(), 0, Game.SIDEBAR, Game.height())
+        rect = pygame.Rect(Grid.WIDTH, 0, Game.SIDEBAR, Game.HEIGHT)
         self.window.fill(color, rect)
 
         ####
@@ -476,20 +458,20 @@ class Game(object):
         if self.debug:
             color = self.COLORS['SIDE_BODY']
             font = self.fonts['SIDE_BODY']
-            x = self.width() - 130
-            y = self.height() - 30
+            x = Game.WIDTH - 150
+            y = Game.HEIGHT - 30
             p = (x, y)
-            text = font.render('TICK', True, color)
+            text = font.render('DEBUG', True, color)
             self.window.blit(text, p)
 
-            x = x + 70
-            p = (x, y)
+            x = x + 80
+            y = y + 4
             if self.tick < Game.TICK:
                 color = self.COLORS['RANK_2']
             else:
                 color = self.COLORS['RANK_5']
-            text = font.render(str(self.tick), True, color)
-            self.window.blit(text, p)
+            rect = pygame.Rect(x, y, 50, 12)
+            self.window.fill(color, rect)
 
     # ----------------------------------------
 
@@ -507,21 +489,21 @@ class Game(object):
             if bool(index):
                 cell = self.grid[index]
                 if cell.base:
+                    # NTS: update with valid path logic
                     if notNull(self.building) and (cell.open or (cell.build == 0)):
                         col, row = index
-                        self.spawnTower(self.building, col, row)      # NTS: update with valid path logic
-                        cell.build = self.building
+                        cell.build = self.spawnTower(self.building, col, row)
                         cell.open = False
                         self.grid.pathMain()
                     elif notNull(cell.build):
                         self.select = index
             else:
-                playWest, playNorth, playEast, playSouth = self.btnPlay
-                if (playWest <= x <= playEast) and (playNorth <= y <= playSouth):
+                west, north, east, south = Game.BTN_PLAY
+                if (west <= x <= east) and (north <= y <= south):
                     self.pause = not self.pause
 
-                nextWest, nextNorth, nextEast, nextSouth = self.btnNext
-                if (nextWest <= x <= nextEast) and (nextNorth <= y <= nextSouth):
+                west, north, east, south = Game.BTN_NEXT
+                if (west <= x <= east) and (north <= y <= south):
                     self.spawnWave()
 
         elif button == 3:
@@ -710,6 +692,8 @@ class Game(object):
         self.towers.update({self._idTower: tower})
         self.statTowersBuilt = self.statTowersBuilt + 1
 
+        return self._idTower
+
     # ----------------------------------------
 
     def spawnWave(self):
@@ -728,14 +712,14 @@ class Game(object):
                 for i in range(count):
                     creep = self.spawnCreep(ai)
                     if ai < 10:
-                        col = random.randint(1, 20)
-                        row = random.randint(Grid.baseNorth(), Grid.baseSouth())
+                        col = random.randint(1, count)
+                        row = random.randint(Grid.BASE_NORTH, Grid.BASE_SOUTH)
                     else:
                         col = 3
-                        row = random.randint(Grid.baseNorth() + 2, Grid.baseSouth() - 2)
+                        row = random.randint(Grid.BASE_NORTH + 2, Grid.BASE_SOUTH - 2)
 
-                    creep.x = - ((col * Cell.DIM) + Cell.half() - 1)
-                    creep.y = self.grid.north + (row * Cell.DIM) + Cell.half() - 1
+                    creep.x = - (col * Cell.DIM) - random.randint(1, Cell.DIM)
+                    creep.y = self.grid.north + (row * Cell.DIM) + random.randint(1, Cell.DIM)
 
             if self.wave != Game.WAVE_MAX:
                 self.waveTimer = Game.WAVE_TIMER
@@ -749,7 +733,6 @@ class Game(object):
         update path, target, and location for all creeps
         :return: none
         """
-        pathIndexes = {}
         removeCreeps = []
 
         if bool(self.creeps):
@@ -764,21 +747,16 @@ class Game(object):
                     self.statCreepsEscaped = self.statCreepsEscaped + 1
                     continue
 
-                if (creep.x < 0) or (creep.x > self.grid[Grid.baseNE()].x):
+                if not (0 < creep.x < self.grid[Grid.BASE_NE].x):
                     creep.angle = 0.0
                     creep.x = creep.x + move
                     continue
 
                 creep.index = self.grid.pointToIndex(creep.xy)
                 if not bool(creep.path):
-                    creep.path = self.grid.pathCreep(creep.index)
-                    for n in creep.path:
-                        if not (n in pathIndexes):
-                            pathIndexes.update({n: None})
+                    creep.goal = self.grid.goal
+                    creep.path = self.grid.pathCreep(creep.index, creep.goal)
                     creep.target = creep.path[0]
-
-                if not bool(creep.path):
-                    continue    # NTS: remove after build logic completed for path blocking
 
                 xTarget, yTarget = self.grid.indexToPoint(creep.target)
                 a = xTarget - creep.x
@@ -792,13 +770,16 @@ class Game(object):
                     creep.x = creep.x + x
                     creep.y = creep.y - y
                 else:
-                    creep.path = self.grid.pathCreep(creep.index)
-                    creep.target = creep.path[0]
-
-                    if creep.target[0] > Grid.baseEast():
+                    if creep.target[0] > Grid.BASE_EAST:
                         creep.angle = 0.0
                         creep.x = creep.x + move
                     else:
+                        creep.path = self.grid.pathCreep(creep.index, creep.goal)
+                        if not bool(creep.path):    # NTS: remove after build logic completed for path blocking
+                            continue
+                        for n in creep.path:
+                            self.grid[n].path = True
+                        creep.target = creep.path[0]
                         xTarget, yTarget = self.grid.indexToPoint(creep.target)
                         a = xTarget - creep.x
                         b = creep.y - yTarget
@@ -807,9 +788,6 @@ class Game(object):
                         y = move * math.sin(creep.angle)
                         creep.x = creep.x + x
                         creep.y = creep.y - y
-
-            for n in pathIndexes:
-                self.grid[n].path = True
 
             for n in removeCreeps:
                 del self.creeps[n]

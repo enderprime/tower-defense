@@ -4,7 +4,7 @@
 [D] tower defense constants
 [E] ender.prime@gmail.com
 [F] const.py
-[V] 02.06.17
+[V] 02.13.17
 """
 
 # constant file used to speed development
@@ -60,5 +60,4 @@ IMG_TOWER_4_1 = PATH_IMG + 'tower-4-1.png'
 IMG_TOWER_5_1 = PATH_IMG + 'tower-5-1.png'
 IMG_TOWER_6_1 = PATH_IMG + 'tower-6-1.png'
 IMG_TOWER_7_1 = PATH_IMG + 'tower-7-1.png'
-IMG_TOWER_8_1 = PATH_IMG + 'tower-8-1.png'
-# IMG_TOWER_9 = PATH_IMG + 'tower-9.png'
+IMG_TOWER_8 = PATH_IMG + 'tower-8.png'

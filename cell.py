@@ -4,7 +4,7 @@
 [D] tower defense cell class
 [E] ender.prime@gmail.com
 [F] cell.py
-[V] 02.08.17
+[V] 02.13.17
 """
 
 from bool import *
@@ -18,7 +18,8 @@ class Cell(object):
     """
     represents a single game board square
     """
-    DIM = 48    # pixels
+    DIM = 48            # cell size in pixels
+    HALF = DIM // 2     # half size in pixels
 
     # ----------------------------------------
 
@@ -29,35 +30,26 @@ class Cell(object):
         self.x = 0
         self.y = 0
 
-        self.base = False
-        self.gx = math.inf
-        self.hx = math.inf
-        self.parent = None
+        self.base = False       # true if cell within base bounds
+        self.gx = math.inf      # used for pathfinding
+        self.hx = math.inf      # used for pathfinding
+        self.parent = None      # used for pathfinding
 
-        self.build = None
-        self.open = True
-        self.path = False
+        self.build = None       # if a tower is built here, holds tower _id
+        self.open = True        # true if cell is open for building
+        self.path = False       # true if cell location is being used in pathing
 
     # ----------------------------------------
 
     def __repr__(self):
 
-        return 'Cell(' + str(self.col) + ', ' + str(self.row) + ', ' + str(self.x) + ', ' + str(self.y) + ')'
+        return 'Cell()'
 
     # ----------------------------------------
 
     def __str__(self):
 
         return str(self.index)
-
-    # ----------------------------------------
-    
-    @classmethod
-    def half(cls):
-        """ 
-        :return: size in pixels // 2
-        """
-        return Cell.DIM // 2
     
     # ----------------------------------------
 
@@ -84,7 +76,7 @@ class Cell(object):
         """
         :return: east x value
         """
-        return self.x + Cell.half() - 1
+        return self.x + Cell.HALF - 1
 
     # ----------------------------------------
 
@@ -102,7 +94,7 @@ class Cell(object):
         """
         :return: north y value
         """
-        return self.y - Cell.half()
+        return self.y - Cell.HALF
 
     # ----------------------------------------
 
@@ -129,7 +121,7 @@ class Cell(object):
         """
         :return: south y value
         """
-        return self.y + Cell.half() - 1
+        return self.y + Cell.HALF - 1
 
     # ----------------------------------------
 
@@ -156,7 +148,7 @@ class Cell(object):
         """
         :return: west x value
         """
-        return self.x - Cell.half()
+        return self.x - Cell.HALF
 
     # ----------------------------------------
 
@@ -175,3 +167,4 @@ class Cell(object):
         """
         self.build = None
         self.open = True
+        self.path = False

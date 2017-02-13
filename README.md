@@ -25,3 +25,7 @@ tower defense game
 - basic spawnWave() functionality
 - creep run-time movement logic
 - victory / loss conditions
+
+02.12.17
+
+- refactored many class methods for speed

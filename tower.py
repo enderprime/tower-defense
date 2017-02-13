@@ -4,7 +4,7 @@
 [D] tower defense tower class
 [E] ender.prime@gmail.com
 [F] tower.py
-[V] 02.10.17
+[V] 02.13.17
 """
 
 from bool import *
@@ -48,10 +48,10 @@ class Tower(object):
         """
         :return: image path
         """
-        if self.ai == 0:
-            return PATH_IMG + 'tower-0.png'
-        else:
+        if 0 < self.ai < 8:
             return PATH_IMG + 'tower-' + str(self.ai) + '-' + str(self.rank) + '.png'
+        else:
+            return PATH_IMG + 'tower-' + str(self.ai) + '.png'
 
     # ----------------------------------------
 

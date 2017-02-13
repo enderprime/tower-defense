@@ -4,7 +4,7 @@
 [D] tower defense creep class
 [E] ender.prime@gmail.com
 [F] creep.py
-[V] 02.10.17
+[V] 02.13.17
 """
 
 from bool import *
@@ -26,6 +26,7 @@ class Creep(object):
         self.damage = 1         # mass lost if escaped
         self.description = ''
         self.energy = 1         # energy gained if killed
+        self.goal = ()          # used in pathfinding
         self.index = ()
         self.mass = 1           # damage required to kill
         self.name = ''
@@ -33,7 +34,7 @@ class Creep(object):
         self.rank = 1           # creep level, used for generating stat values
         self.size = 48          # pixels
         self.speed = 48         # pixels per second, roughly
-        self.target = ()
+        self.target = ()        # index of next cell to visit
         self.x = 0
         self.y = 0
 
