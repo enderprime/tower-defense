@@ -384,7 +384,7 @@ class Game(object):
                 if cell.base:
                     if notNull(self.building):
                         self.select = None
-                        if (not cell.path) and cell.open:
+                        if cell.open or (cell.build == 0):      # NTS: update with path blocking logic
                             color = Game.COLORS['CELL_OPEN']
                         else:
                             color = Game.COLORS['CELL_BLOCK']
@@ -488,13 +488,12 @@ class Game(object):
             index = self.grid.pointToIndex(point)
             if bool(index):
                 cell = self.grid[index]
+                col, row = index
                 if cell.base:
                     # NTS: update with valid path logic
                     if notNull(self.building) and (cell.open or (cell.build == 0)):
-                        col, row = index
                         cell.build = self.spawnTower(self.building, col, row)
-                        cell.open = False
-                        self.grid.pathMain()
+                        self.grid.path = self.grid.pathfinder()
                     elif notNull(cell.build):
                         self.select = index
             else:
@@ -689,6 +688,11 @@ class Game(object):
         tower.col = col
         tower.row = row
 
+        cell = self.grid.cells[col][row]
+        cell.build = self._idTower
+        cell.open = False
+        cell.path = None
+
         self.towers.update({self._idTower: tower})
         self.statTowersBuilt = self.statTowersBuilt + 1
 
@@ -739,6 +743,7 @@ class Game(object):
             for _id, creep in self.creeps.items():
 
                 move = max(1, creep.speed) * self.delta / 1000
+                creep.index = self.grid.pointToIndex(creep.xy)
 
                 if creep.x > (self.grid.east + creep.half):
                     removeCreeps.append(_id)
@@ -747,16 +752,18 @@ class Game(object):
                     self.statCreepsEscaped = self.statCreepsEscaped + 1
                     continue
 
-                if not (0 < creep.x < self.grid[Grid.BASE_NE].x):
+                if (not bool(creep.index)) or (creep.x >= self.grid.cells[Grid.BASE_EAST][0].NW[0]):
                     creep.angle = 0.0
                     creep.x = creep.x + move
                     continue
 
-                creep.index = self.grid.pointToIndex(creep.xy)
-                if not bool(creep.path):
-                    creep.goal = self.grid.goal
-                    creep.path = self.grid.pathCreep(creep.index, creep.goal)
-                    creep.target = creep.path[0]
+                if not bool(creep.target):
+                    creep.target = self.grid[creep.index].path
+
+                if not bool(creep.target):
+                    creep.angle = 0.0
+                    creep.x = creep.x + move
+                    continue
 
                 xTarget, yTarget = self.grid.indexToPoint(creep.target)
                 a = xTarget - creep.x
@@ -770,24 +777,23 @@ class Game(object):
                     creep.x = creep.x + x
                     creep.y = creep.y - y
                 else:
-                    if creep.target[0] > Grid.BASE_EAST:
+                    creep.last = creep.index
+                    creep.index = self.grid.pointToIndex(creep.xy)
+                    creep.target = self.grid[creep.index].path
+
+                    if not bool(creep.target):
                         creep.angle = 0.0
                         creep.x = creep.x + move
-                    else:
-                        creep.path = self.grid.pathCreep(creep.index, creep.goal)
-                        if not bool(creep.path):    # NTS: remove after build logic completed for path blocking
-                            continue
-                        for n in creep.path:
-                            self.grid[n].path = True
-                        creep.target = creep.path[0]
-                        xTarget, yTarget = self.grid.indexToPoint(creep.target)
-                        a = xTarget - creep.x
-                        b = creep.y - yTarget
-                        creep.angle = math.atan2(b, a)
-                        x = move * math.cos(creep.angle)
-                        y = move * math.sin(creep.angle)
-                        creep.x = creep.x + x
-                        creep.y = creep.y - y
+                        continue
+
+                    xTarget, yTarget = self.grid.indexToPoint(creep.target)
+                    a = xTarget - creep.x
+                    b = creep.y - yTarget
+                    creep.angle = math.atan2(b, a)
+                    x = move * math.cos(creep.angle)
+                    y = move * math.sin(creep.angle)
+                    creep.x = creep.x + x
+                    creep.y = creep.y - y
 
             for n in removeCreeps:
                 del self.creeps[n]

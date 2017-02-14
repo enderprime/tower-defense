@@ -34,7 +34,8 @@ class Grid(object):
     HEIGHT = ROWS * Cell.DIM                # height in pixels
 
     # relative indexes for adjacent cells
-    ADJACENT_DIAG = ((1, 0), (1, 1), (1, -1), (0, 1), (0, -1), (-1, 0), (-1, 1), (-1, -1))
+    ADJACENT_ALL = ((1, 0), (1, 1), (1, -1), (0, 1), (0, -1), (-1, 0), (-1, 1), (-1, -1))
+    ADJACENT_DIAG = ((1, 1), (1, -1), (-1, 1), (-1, -1))
     ADJACENT_ORTHO = ((1, 0), (0, 1), (0, -1), (-1, 0))
 
     BASE_EAST = BASE[0] + SPACE[0] - 1      # base area east column value
@@ -48,6 +49,9 @@ class Grid(object):
     BASE_SW = BASE_WEST, BASE_SOUTH         # base area southwest index: (column, row)
 
     BASE_BOUNDS = BASE_NW + BASE_SE         # base area index bounds: (west, north, east, south)
+    
+    PATH_START = (BASE_WEST - 1, CENTER[1])     # first index on main path
+    PATH_GOAL = (BASE_EAST + 1, CENTER[1])      # last index on main path
 
     # ----------------------------------------
 
@@ -78,13 +82,14 @@ class Grid(object):
                 if not rowBase:
                     cell.open = False
 
+                if col == Grid.BASE_EAST:
+                    cell.gx = 10
+                    cell.parent = (col + 1, row)
+
                 lst.append(cell)
             self.cells.append(lst)
 
-        self.start = (Grid.BASE_WEST - 1, Grid.CENTER[1])   # first index on main path
-        self.goal = (Grid.BASE_EAST + 1, Grid.CENTER[1])    # last index on main path
-        self.path = []                                      # main path index list
-        self.pathMain()
+        self.path = self.pathfinder()       # main path index list
 
     # ----------------------------------------
 
@@ -142,7 +147,7 @@ class Grid(object):
         colBase, rowBase = index
         lst = []
 
-        for n in Grid.ADJACENT_DIAG:
+        for n in Grid.ADJACENT_ALL:
             colStep, rowStep = n
             col = colBase + colStep
             row = rowBase + rowStep
@@ -183,6 +188,23 @@ class Grid(object):
     # ----------------------------------------
 
     @classmethod
+    def hxDiagonal(cls, start, goal):
+        """
+        :param start: (x, y)
+        :param goal: (x, y)
+        :return: heuristic: diagonal distance to goal
+        """
+        xStart, yStart = start
+        xGoal, yGoal = goal
+        a = abs(xStart - xGoal)
+        b = abs(yStart - yGoal)
+        hx = ((a + b) - (6 * min(a, b)))
+
+        return hx * Grid.FUZZ
+
+    # ----------------------------------------
+
+    @classmethod
     def hxEuclid(cls, start, goal):
         """
         :param start: (x, y)
@@ -193,8 +215,9 @@ class Grid(object):
         xGoal, yGoal = goal
         a = xStart - xGoal
         b = yStart - yGoal
+        hx = math.hypot(a, b)
 
-        return math.hypot(a, b) * Grid.FUZZ
+        return hx * Grid.FUZZ
 
     # ----------------------------------------
 
@@ -207,10 +230,11 @@ class Grid(object):
         """
         xStart, yStart = start
         xGoal, yGoal = goal
-        a = xStart - xGoal
-        b = yStart - yGoal
+        a = abs(xStart - xGoal)
+        b = abs(yStart - yGoal)
+        hx = (a + b)
 
-        return (abs(a) + abs(b)) * Grid.FUZZ
+        return hx * Grid.FUZZ
 
     # ----------------------------------------
 
@@ -223,10 +247,11 @@ class Grid(object):
         """
         xStart, yStart = start
         xGoal, yGoal = goal
-        a = xStart - xGoal
-        b = yStart - yGoal
+        a = abs(xStart - xGoal)
+        b = abs(yStart - yGoal)
+        hx = max(a, b)
 
-        return max(abs(a), abs(b)) * Grid.FUZZ
+        return hx * Grid.FUZZ
 
     # ----------------------------------------
 
@@ -354,7 +379,7 @@ class Grid(object):
         colBase, rowBase = index
         lst = []
 
-        for n in Grid.ADJACENT_DIAG:
+        for n in Grid.ADJACENT_ALL:
             colStep, rowStep = n
             col = colBase + colStep
             row = rowBase + rowStep
@@ -397,25 +422,19 @@ class Grid(object):
         colBase, rowBase = index
         lst = []
 
-        for n in ((1, 0), (0, 1), (0, -1), (-1, 0)):
+        for n in Grid.ADJACENT_ALL:
             colStep, rowStep = n
             col = colBase + colStep
             row = rowBase + rowStep
             adj = (col, row)
             if Grid.indexIsValid(adj):
                 if self.cells[col][row].open:
-                    lst.append(adj)
-
-        for n in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
-            colStep, rowStep = n
-            col = colBase + colStep
-            row = rowBase + rowStep
-            adj = (col, row)
-            if Grid.indexIsValid(adj):
-                if self.cells[col][row].open:
-                    c1, r1 = (col, rowBase)
-                    c2, r2 = (colBase, row)
-                    if self.cells[c1][r1].open and self.cells[c2][r2].open:
+                    if n in Grid.ADJACENT_DIAG:
+                        c1, r1 = (col, rowBase)
+                        c2, r2 = (colBase, row)
+                        if self.cells[c1][r1].open and self.cells[c2][r2].open:
+                            lst.append(adj)
+                    else:
                         lst.append(adj)
 
         return lst
@@ -435,96 +454,31 @@ class Grid(object):
 
     # ----------------------------------------
 
-    def pathCreep(self, start, goal):
+    def pathfinder(self):
         """
-        :param start: (column, row)
-        :param goal: (column, row)
-        :return: list of indexes on path to goal
+        update path destination indexes for all cells
+        :return: main path index list from Grid.PATH_START to Grid.PATH_GOAL
         """
-        lst = []
-        openSet = {}
-        closedSet = {}
-
-        if start in self.path:
-            n = self.path.index(start) + 1
-            lst = self.path[n:]
-        else:
-            grid = copy.deepcopy(self.cells)
-
-            xStart, yStart = start
-            node = grid[xStart][yStart]
-            node.parent = None
-            openSet.update({start: 0})
-
-            while bool(openSet):
-
-                current = x, y = min(openSet, key = openSet.get)
-                del openSet[current]
-                closedSet.update({current: None})
-
-                if (current == goal) or (x == (Grid.BASE_EAST + 1)) or (current in self.path):
-                    break
-
-                for index in self.adjOpenPath(current):
-                    xAdj, yAdj = index
-                    node = grid[xAdj][yAdj]
-                    if (abs(x - xAdj) + abs(y - yAdj)) == 2:
-                        gx = grid[x][y].gx + 14
-                    else:
-                        gx = grid[x][y].gx + 10
-                    if gx < node.gx:
-                        if index in openSet: del openSet[index]
-                        if index in closedSet: del closedSet[index]
-                    if (not (index in openSet)) and (not (index in closedSet)):
-                        node.gx = gx
-                        node.hx = 10 * Grid.hxUniform(start, goal)
-                        node.parent = current
-                        openSet.update({index: node.fx})
-
-            x, y = current
-            node = grid[x][y]
-            if bool(node.parent):
-                lst.append(current)
-                while bool(node.parent):
-                    if node.parent == start:
-                        break
-                    x, y = node.parent
-                    node = grid[x][y]
-                lst.reverse()
-
-        return lst
-
-    # ----------------------------------------
-
-    def pathGrid(self):
-        """
-        :return: list of indexes on main path
-        """
-        lst = []
-        openSet = {}
-        closedSet = {}
+        for lst in self.cells:
+            for cell in lst:
+                cell.path = None
 
         grid = copy.deepcopy(self.cells)
-        xStart, yStart = self.start
+        xStart, yStart = Grid.PATH_START
+        xGoal, yGoal = Grid.PATH_GOAL
 
-        node = grid[xStart][yStart]
+        openSet = {}
+        closedSet = {}
+
+        node = grid[xGoal][yGoal]
         node.parent = None
-        openSet.update({self.start: 0})
+        openSet.update({Grid.PATH_GOAL: 0})
 
         while bool(openSet):
+
             current = x, y = min(openSet, key = openSet.get)
             del openSet[current]
             closedSet.update({current: None})
-
-            if x == (Grid.BASE_EAST + 1):
-                break
-
-            if x == Grid.BASE_WEST:
-                yStart = y
-                node = grid[x][y]
-                node.parent = (xStart, yStart)
-                node = grid[xStart][yStart]
-                node.parent = None
 
             for index in self.adjOpenPath(current):
                 xAdj, yAdj = index
@@ -538,43 +492,23 @@ class Grid(object):
                     if index in closedSet: del closedSet[index]
                 if (not (index in openSet)) and (not (index in closedSet)):
                     node.gx = gx
-                    node.hx = 10 * Grid.hxUniform(self.start, self.goal)
+                    node.hx = 10 * Grid.hxDiagonal(Grid.PATH_GOAL, index)
                     node.parent = current
                     openSet.update({index: node.fx})
 
-        x, y = current
-        node = grid[x][y]
-        if bool(node.parent):
-            lst.append(current)
-            while bool(node.parent):
-                lst.append(node.parent)
-                x, y = node.parent
-                node = grid[x][y]
-            lst.reverse()
+        for lst in self.cells:
+            for cell in lst:
+                x, y = cell.index
+                cell.path = grid[x][y].parent
 
-        return lst
+        cell = grid[xStart][yStart]
+        path = [cell.index]
+        while (cell.index != Grid.PATH_GOAL) and bool(cell.parent):
+            path.append(cell.parent)
+            x, y = cell.parent
+            cell = grid[x][y]
 
-    # ----------------------------------------
-
-    def pathMain(self):
-        """
-        update grid start, grid goal, and main path
-        :return: none
-        """
-        path = self.pathGrid()
-
-        if bool(path):
-            self.path = path
-            self.start = path[0]
-            self.goal = path[-1]
-
-            for col in range(Grid.COLS):
-                for row in range(Grid.ROWS):
-                    self.cells[col][row].path = False
-
-            for n in path:
-                col, row = n
-                self.cells[col][row].path = True
+        return path
 
     # ----------------------------------------
 
@@ -599,11 +533,12 @@ class Grid(object):
         :return: cell index: (column, row) at point, or None if point is outside bounds
         """
         if self.pointIsValid(point):
-            x, y = point
+            x = int(round(point[0], 0))
+            y = int(round(point[1], 0))
             x = x - self.west
             y = y - self.north
-            col = int(x // Cell.DIM)
-            row = int(y // Cell.DIM)
+            col = x // Cell.DIM
+            row = y // Cell.DIM
             return col, row
         else:
             return None

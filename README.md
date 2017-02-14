@@ -21,11 +21,12 @@ tower defense game
 02.10.17
 
 - split A* into separate methods for creep vs grid
-- updated adjacent, and hx methods for speed
+- updated adjacent and hx methods for speed
 - basic spawnWave() functionality
-- creep run-time movement logic
-- victory / loss conditions
+- creep movement logic
+- victory conditions
 
-02.12.17
+02.13.17
 
-- refactored many class methods for speed
+- refactored various class methods into class variables for speed
+- refactored grid pathfinding strategy and creep movement for speed

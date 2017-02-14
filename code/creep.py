@@ -1,56 +1,42 @@
 """
 [A] Edward Rollins, Jr.
 [C] enderprime.com
-[D] tower defense cell class
+[D] tower defense creep class
 [E] ender.prime@gmail.com
-[F] cell.py
+[F] creep.py
 [V] 02.13.17
 """
 
 from bool import *
 from const import *
 
-import math
-
 # --------------------------------------------------------------------------------------------------------------------
 
-class Cell(object):
+class Creep(object):
     """
-    represents a single game board square
+    killable enemy
     """
-    DIM = 48            # cell size in pixels
-    HALF = DIM // 2     # half size in pixels
+    def __init__(self, _id):
 
-    # ----------------------------------------
+        # _id == unique int, assigned on spawn
+        self._id = _id
 
-    def __init__(self):
-
-        self.col = 0
-        self.row = 0
+        self.ai = 0             # creep type
+        self.angle = 0.0
+        self.damage = 1         # mass lost if escaped
+        self.description = ''
+        self.energy = 1         # energy gained if killed
+        self.goal = ()          # used in pathfinding
+        self.index = ()
+        self.mass = 1           # damage required to kill
+        self.name = ''
+        self.rank = 1           # creep level, used for generating stats on spawn
+        self.size = 48          # pixels
+        self.speed = 48         # pixels per second, roughly
+        self.target = ()        # index of next cell to visit
         self.x = 0
         self.y = 0
 
-        self.base = False       # true if cell within base bounds
-        self.gx = math.inf      # used for pathfinding
-        self.hx = math.inf      # used for pathfinding
-        self.parent = None      # used for pathfinding
-
-        self.build = None       # if a tower is built here, holds tower _id
-        self.open = True        # true if cell is open for building
-        self.path = False       # true if cell location is being used in pathing
-
-    # ----------------------------------------
-
-    def __repr__(self):
-
-        return 'Cell()'
-
-    # ----------------------------------------
-
-    def __str__(self):
-
-        return str(self.index)
-    
     # ----------------------------------------
 
     @property
@@ -63,29 +49,32 @@ class Cell(object):
     # ----------------------------------------
 
     @property
-    def fx(self):
-        """
-        :return: pathfinder fx == gx + hx
-        """
-        return self.gx + self.hx
-
-    # ----------------------------------------
-
-    @property
     def east(self):
         """
         :return: east x value
         """
-        return self.x + Cell.HALF - 1
+        return self.x + self.half - 1
+
+     # ----------------------------------------
+
+    @property
+    def half(self):
+        """
+        :return: size in pixels // 2
+        """
+        return self.size // 2
 
     # ----------------------------------------
 
     @property
-    def index(self):
+    def image(self):
         """
-        :return: grid index: (column, row)
+        :return: image path
         """
-        return self.col, self.row
+        if self.ai < 10:
+            return PATH_IMG + 'creep-0' + str(self.ai) + '.png'
+        else:
+            return PATH_IMG + 'creep-' + str(self.ai) + '.png'
 
     # ----------------------------------------
 
@@ -94,7 +83,7 @@ class Cell(object):
         """
         :return: north y value
         """
-        return self.y - Cell.HALF
+        return self.y - self.half
 
     # ----------------------------------------
 
@@ -121,7 +110,7 @@ class Cell(object):
         """
         :return: south y value
         """
-        return self.y + Cell.HALF - 1
+        return self.y + self.half - 1
 
     # ----------------------------------------
 
@@ -148,7 +137,7 @@ class Cell(object):
         """
         :return: west x value
         """
-        return self.x - Cell.HALF
+        return self.x - self.half
 
     # ----------------------------------------
 
@@ -157,14 +146,7 @@ class Cell(object):
         """
         :return: base point at center: (x, y)
         """
+
         return self.x, self.y
 
     # ----------------------------------------
-
-    def reset(self):
-        """
-        :return: reset cell to new game conditions
-        """
-        self.build = None
-        self.open = True
-        self.path = False
