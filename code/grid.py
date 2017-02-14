@@ -28,7 +28,7 @@ class Grid(object):
 
     INDEXES = (COLS, ROWS)                  # total dimensions
     CENTER = (COLS // 2, ROWS // 2)         # center index
-    FUZZ = 1 + (1 / (COLS * ROWS))          # used in pathfinding
+    FUZZ = 1 - (1 / (COLS * ROWS))          # used in pathfinding
 
     WIDTH = COLS * Cell.DIM                 # width in pixels
     HEIGHT = ROWS * Cell.DIM                # height in pixels
@@ -38,17 +38,17 @@ class Grid(object):
     ADJACENT_DIAG = ((1, 1), (1, -1), (-1, 1), (-1, -1))
     ADJACENT_ORTHO = ((1, 0), (0, 1), (0, -1), (-1, 0))
 
-    BASE_EAST = BASE[0] + SPACE[0] - 1      # base area east column value
-    BASE_NORTH = SPACE[1]                   # base area north row value
-    BASE_SOUTH = BASE[1] + SPACE[1] - 1     # base area south row value
-    BASE_WEST = SPACE[0]                    # base area west column value
+    BASE_EAST = BASE[0] + SPACE[0] - 1          # base area east column value
+    BASE_NORTH = SPACE[1]                       # base area north row value
+    BASE_SOUTH = BASE[1] + SPACE[1] - 1         # base area south row value
+    BASE_WEST = SPACE[0]                        # base area west column value
 
-    BASE_NE = BASE_EAST, BASE_NORTH         # base area northeast index: (column, row)
-    BASE_NW = BASE_WEST, BASE_NORTH         # base area northwest index: (column, row)
-    BASE_SE = BASE_EAST, BASE_SOUTH         # base area southeast index: (column, row)
-    BASE_SW = BASE_WEST, BASE_SOUTH         # base area southwest index: (column, row)
+    BASE_NE = BASE_EAST, BASE_NORTH             # base area northeast index: (column, row)
+    BASE_NW = BASE_WEST, BASE_NORTH             # base area northwest index: (column, row)
+    BASE_SE = BASE_EAST, BASE_SOUTH             # base area southeast index: (column, row)
+    BASE_SW = BASE_WEST, BASE_SOUTH             # base area southwest index: (column, row)
 
-    BASE_BOUNDS = BASE_NW + BASE_SE         # base area index bounds: (west, north, east, south)
+    BASE_BOUNDS = BASE_NW + BASE_SE             # base area index bounds: (west, north, east, south)
     
     PATH_START = (BASE_WEST - 1, CENTER[1])     # first index on main path
     PATH_GOAL = (BASE_EAST + 1, CENTER[1])      # last index on main path
@@ -81,10 +81,6 @@ class Grid(object):
                     cell.base = True
                 if not rowBase:
                     cell.open = False
-
-                if col == Grid.BASE_EAST:
-                    cell.gx = 10
-                    cell.parent = (col + 1, row)
 
                 lst.append(cell)
             self.cells.append(lst)
@@ -483,7 +479,9 @@ class Grid(object):
             for index in self.adjOpenPath(current):
                 xAdj, yAdj = index
                 node = grid[xAdj][yAdj]
-                if (abs(x - xAdj) + abs(y - yAdj)) == 2:
+                if xAdj == Grid.BASE_EAST:
+                    gx = 10
+                elif (abs(x - xAdj) + abs(y - yAdj)) == 2:
                     gx = grid[x][y].gx + 14
                 else:
                     gx = grid[x][y].gx + 10
@@ -493,7 +491,10 @@ class Grid(object):
                 if (not (index in openSet)) and (not (index in closedSet)):
                     node.gx = gx
                     node.hx = 10 * Grid.hxDiagonal(Grid.PATH_GOAL, index)
-                    node.parent = current
+                    if xAdj == Grid.BASE_EAST:
+                        node.parent = (xAdj + 1, yAdj)
+                    else:
+                        node.parent = current
                     openSet.update({index: node.fx})
 
         for lst in self.cells:
