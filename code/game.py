@@ -4,7 +4,7 @@
 [D] tower defense game class
 [E] ender.prime@gmail.com
 [F] game.py
-[V] 02.13.17
+[V] 02.14.17
 """
 
 from bool import *
@@ -25,6 +25,8 @@ class Game(object):
     """
     core game logic
     """
+
+    DEBUG = False           # debug mode for testing
     FPS = 25                # frames per second
     TICK = 1000 // FPS      # time in ms per game loop
 
@@ -38,58 +40,22 @@ class Game(object):
     # next button bounds
     BTN_NEXT_X = 1100
     BTN_NEXT_Y = (HEADER // 2) - 18
-    BTN_NEXT = (BTN_NEXT_X, BTN_NEXT_Y, BTN_NEXT_X + 27, BTN_NEXT_Y + 27)   # (west, north, east, south)
+    BTN_NEXT = (BTN_NEXT_X, BTN_NEXT_Y, BTN_NEXT_X + 27, BTN_NEXT_Y + 27)
 
     # play button bounds
     BTN_PLAY_X = 1050
     BTN_PLAY_Y = (HEADER // 2) - 18
-    BTN_PLAY = (BTN_PLAY_X, BTN_PLAY_Y, BTN_PLAY_X + 27, BTN_PLAY_Y + 27)   # (west, north, east, south)
+    BTN_PLAY = (BTN_PLAY_X, BTN_PLAY_Y, BTN_PLAY_X + 27, BTN_PLAY_Y + 27)
 
-    WAVE_MAX = 100
-    WAVE_TIMER = 30     # seconds
-
-    COLOR_BLACK = (0, 0, 0)
-    COLOR_BLUE = (32, 64, 128)
-    COLOR_GREEN = (51, 102, 51)
-    COLOR_GREY_1 = (24, 24, 24)
-    COLOR_GREY_2 = (36, 36, 36)
-    COLOR_ORANGE = (204, 102, 0)
-    COLOR_PURPLE = (102, 0, 102)
-    COLOR_RED = (128, 28, 28)
-    COLOR_WHITE = (255, 255, 255)
-
-    COLORS = \
-        {
-            'CELL_BLOCK':  COLOR_RED,
-            'CELL_BUILD':  COLOR_BLUE,
-            'CELL_HOVER':  COLOR_WHITE,
-            'CELL_OPEN':   COLOR_GREEN,
-
-            'FOOT_BG':     COLOR_BLACK,
-            'FOOT_BODY':   COLOR_WHITE,
-            'FOOT_HEAD':   COLOR_WHITE,
-
-            'GRID_BASE':   COLOR_WHITE,
-            'GRID_BG':     COLOR_BLACK,
-            'GRID_BODY':   COLOR_WHITE,
-            'GRID_GRID':   COLOR_GREY_1,
-            'GRID_HEAD':   COLOR_WHITE,
-            'GRID_PATH':   COLOR_ORANGE,
-
-            'HEAD_BG':     COLOR_BLACK,
-            'HEAD_BODY':   COLOR_WHITE,
-            'HEAD_HEAD':   COLOR_WHITE,
-
-            'RANK_1':      COLOR_GREY_2,
-            'RANK_2':      COLOR_GREEN,
-            'RANK_3':      COLOR_BLUE,
-            'RANK_4':      COLOR_PURPLE,
-            'RANK_5':      COLOR_RED,
-
-            'SIDE_BG':     COLOR_BLACK,
-            'SIDE_BODY':   COLOR_WHITE,
-            'SIDE_HEAD':   COLOR_WHITE,
-        }
+    COLOR_BLACK =   (0, 0, 0)
+    COLOR_BLUE =    (32, 64, 128)
+    COLOR_GREEN =   (51, 102, 51)
+    COLOR_GREY_1 =  (24, 24, 24)
+    COLOR_GREY_2 =  (36, 36, 36)
+    COLOR_ORANGE =  (204, 102, 0)
+    COLOR_PURPLE =  (102, 0, 102)
+    COLOR_RED =     (128, 28, 28)
+    COLOR_WHITE =   (255, 255, 255)
 
     IMAGES = \
         {
@@ -143,6 +109,9 @@ class Game(object):
             IMG_TOWER_8: pygame.image.load(IMG_TOWER_8)
         }
 
+    WAVE_MAX = 100
+    WAVE_TIMER = 30     # seconds
+
     # creep waves: key = wave number, value = list of creep groups: (creep ai, creep count)
     WAVES = \
         {
@@ -154,21 +123,37 @@ class Game(object):
 
     def __init__(self):
 
-        self.debug = True
+        # font dictionary
+        self._fonts = \
+            {
+                'LUCID_16': pygame.font.SysFont('lucida console', 16),
+                'LUCID_20': pygame.font.SysFont('lucida console', 20),
+                'LUCID_24': pygame.font.SysFont('lucida console', 24)
+            }
+
+        # static text dictionary
+        self._text = \
+            {
+                'ENERGY':   self._fonts['LUCID_20'].render('ENERGY', True, Game.COLOR_WHITE),
+                'MASS':     self._fonts['LUCID_20'].render('MASS', True, Game.COLOR_WHITE),
+                'NEXT':     self._fonts['LUCID_20'].render('NEXT', True, Game.COLOR_WHITE),
+                'TICK':     self._fonts['LUCID_20'].render('TICK', True, Game.COLOR_WHITE),
+                'WAVE':     self._fonts['LUCID_20'].render('WAVE', True, Game.COLOR_WHITE)
+            }
 
         self.clock = pygame.time.Clock()
         self.grid = Grid(0, Game.HEADER)
         self.mouse = (0, 0)
         self.showGrid = False
-        self.showPath = True
+        self.showPath = False
 
         pygame.display.set_icon(Game.IMAGES[IMG_ICON])
         self.window = pygame.display.set_mode((Game.WIDTH, Game.HEIGHT))
         pygame.display.set_caption('TOWER DEFENSE')
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000)
 
-        self._idCreep = 0           # creep id int, increments by 1 for every creep spawn
-        self._idTower = 0           # tower id int, increments by 1 for every tower spawn
+        self._idCreep = 0           # creep id int
+        self._idTower = 0           # tower id int
 
         self.building = None        # if player is in build mode, holds tower type (0-9)
         self.creeps = {}            # dictionary of active creeps in game
@@ -176,7 +161,7 @@ class Game(object):
         self.energy = 100           # main player resource used to buy towers and upgrades
         self.mass = 20              # player health, game over if this reaches zero
         self.pause = True
-        self.select = None          # index of selected cell (cell clicked while hovering)
+        self.select = None          # index of selected cell
         self.tick = 0               # time in ms of last clock tick
 
         self.statCreepsEscaped = 0
@@ -185,29 +170,10 @@ class Game(object):
         self.statTowersBuilt = 0
         self.statTowersSold = 0
 
-        self.time = 0               # running count from start of new game, only increases
+        self.time = 0               # running time in seconds from start of new game
         self.towers = {}            # dictionary of active towers in game
-        self.wave = 0               # current creep wave, increments on spawnWave()
-        self.waveTimer = 0          # countdown to next creep wave, resets to WAVE_TIMER on spawnWave()
-
-    # ----------------------------------------
-
-    @property
-    def fonts(self):
-        """
-        :return: dictionary of fonts
-        """
-        return \
-            {
-                'FOOT_BODY': pygame.font.SysFont('lucida console', 20),
-                'FOOT_HEAD': pygame.font.SysFont('lucida console', 28),
-                'GRID_BODY': pygame.font.SysFont('lucida console', 20),
-                'GRID_HEAD': pygame.font.SysFont('lucida console', 28),
-                'HEAD_BODY': pygame.font.SysFont('lucida console', 20),
-                'HEAD_HEAD': pygame.font.SysFont('lucida console', 28),
-                'SIDE_BODY': pygame.font.SysFont('lucida console', 20),
-                'SIDE_HEAD': pygame.font.SysFont('lucida console', 28)
-            }
+        self.wave = 0               # current creep wave
+        self.waveTimer = 0          # countdown to next creep wave
 
     # ----------------------------------------
 
@@ -261,19 +227,16 @@ class Game(object):
         draw interface header on screen
         :return: none
         """
-        color = Game.COLORS['HEAD_BG']
         rect = pygame.Rect(0, 0, Game.WIDTH, Game.HEADER)
-        self.window.fill(color, rect)
+        self.window.fill(Game.COLOR_BLACK, rect)
 
-        color = self.COLORS['HEAD_BODY']
-        font = self.fonts['HEAD_BODY']
+        color = self.COLOR_WHITE
+        font = self._fonts['LUCID_20']
 
         # mass
         x = 160
         y = (Game.HEADER // 2) - 14
-        p = (x, y)
-        text = font.render('MASS', True, color)
-        self.window.blit(text, p)
+        self.window.blit(self._text['MASS'], (x, y))
 
         if self.mass < 10:
             img = PATH_IMG + 'mass-0' + str(self.mass) + '.png'
@@ -288,42 +251,33 @@ class Game(object):
         # energy
         x = x + 330
         y = (Game.HEADER // 2) - 14
-        p = (x, y)
-        text = font.render('ENERGY', True, color)
-        self.window.blit(text, p)
+        self.window.blit(self._text['ENERGY'], (x, y))
 
         x = x + 90
-        p = (x, y)
         text = font.render(str(self.energy), True, color)
-        self.window.blit(text, p)
+        self.window.blit(text, (x, y))
 
         # wave
         x = x + 100
-        p = (x, y)
-        text = font.render('WAVE', True, color)
-        self.window.blit(text, p)
+        self.window.blit(self._text['WAVE'], (x, y))
 
         x = x + 70
-        p = (x, y)
         if self.wave == 0:
             text = font.render('--', True, color)
         else:
             text = font.render(str(self.wave), True, color)
-        self.window.blit(text, p)
+        self.window.blit(text, (x, y))
 
         # wave timer
         x = x + 90
-        p = (x, y)
-        text = font.render('NEXT', True, color)
-        self.window.blit(text, p)
+        self.window.blit(self._text['NEXT'], (x, y))
 
         x = x + 70
-        p = (x, y)
         if self.waveTimer == 0:
             text = font.render('--', True, color)
         else:
             text = font.render(str(int(self.waveTimer)), True, color)
-        self.window.blit(text, p)
+        self.window.blit(text, (x, y))
 
         # play button
         if self.pause:
@@ -348,9 +302,8 @@ class Game(object):
         draw interface footer on screen
         :return: none
         """
-        color = Game.COLORS['FOOT_BG']
         rect = pygame.Rect(0, Game.HEADER + Grid.HEIGHT, Game.WIDTH, Game.FOOTER)
-        self.window.fill(color, rect)
+        self.window.fill(Game.COLOR_BLACK, rect)
 
         ####
 
@@ -363,18 +316,16 @@ class Game(object):
         """
 
         # background
-        color = Game.COLORS['GRID_BG']
         rect = pygame.Rect(self.grid.x, self.grid.y, Grid.WIDTH, Grid.HEIGHT)
-        self.window.fill(color, rect)
+        self.window.fill(Game.COLOR_BLACK, rect)
 
         # grid lines
-        color = Game.COLORS['GRID_GRID']
         if self.showGrid:
             for lst in self.grid.cells:
                 for cell in lst:
                     if cell.base and cell.open:
                         rect = (cell.west, cell.north, Cell.DIM, Cell.DIM)
-                        pygame.draw.rect(self.window, color, rect, 1)
+                        pygame.draw.rect(self.window, Game.COLOR_GREY_1, rect, 1)
 
         # hover
         if self.grid.pointIsValid(self.mouse):
@@ -385,21 +336,20 @@ class Game(object):
                     if notNull(self.building):
                         self.select = None
                         if cell.open or (cell.build == 0):      # NTS: update with path blocking logic
-                            color = Game.COLORS['CELL_OPEN']
+                            color = Game.COLOR_RED
                         else:
-                            color = Game.COLORS['CELL_BLOCK']
+                            color = Game.COLOR_GREEN
                         rect = pygame.Rect(cell.west, cell.north, Cell.DIM, Cell.DIM)
                         self.window.fill(color, rect)
 
         # selected
         if notNull(self.select):
             cell = self.grid[self.select]
-            color = Game.COLORS['CELL_BUILD']
             rect = pygame.Rect(cell.west, cell.north, Cell.DIM, Cell.DIM)
-            self.window.fill(color, rect)
+            self.window.fill(Game.COLOR_BLUE, rect)
 
         # base border
-        color = Game.COLORS['GRID_BASE']
+        color = Game.COLOR_WHITE
         west, north, east, south = Grid.BASE_BOUNDS
         west, north = self.grid.cells[west][north].NW
         east, south = self.grid.cells[east][south].SE
@@ -416,10 +366,9 @@ class Game(object):
 
         # path
         if self.showPath:
-            color = Game.COLORS['GRID_PATH']
             for index in self.grid.path:
                 p = self.grid[index].xy
-                pygame.draw.circle(self.window, color, p, 3)
+                pygame.draw.circle(self.window, Game.COLOR_ORANGE, p, 3)
 
         # towers
         if bool(self.towers):
@@ -448,30 +397,25 @@ class Game(object):
         draw interface sidebar on screen
         :return: none
         """
-        color = Game.COLORS['SIDE_BG']
         rect = pygame.Rect(Grid.WIDTH, 0, Game.SIDEBAR, Game.HEIGHT)
-        self.window.fill(color, rect)
+        self.window.fill(Game.COLOR_BLACK, rect)
 
-        ####
+        font = self._fonts['LUCID_20']
 
         # debug info
-        if self.debug:
-            color = self.COLORS['SIDE_BODY']
-            font = self.fonts['SIDE_BODY']
-            x = Game.WIDTH - 150
-            y = Game.HEIGHT - 30
-            p = (x, y)
-            text = font.render('DEBUG', True, color)
-            self.window.blit(text, p)
+        if Game.DEBUG:
 
-            x = x + 80
-            y = y + 4
+            x = Game.WIDTH - 140
+            y = Game.HEIGHT - 30
+            self.window.blit(self._text['TICK'], (x, y))
+
+            x = x + 70
             if self.tick < Game.TICK:
-                color = self.COLORS['RANK_2']
+                color = Game.COLOR_GREEN
             else:
-                color = self.COLORS['RANK_5']
-            rect = pygame.Rect(x, y, 50, 12)
-            self.window.fill(color, rect)
+                color = Game.COLOR_RED
+            text = font.render(str(self.tick), True, color)
+            self.window.blit(text, (x, y))
 
     # ----------------------------------------
 
@@ -506,8 +450,8 @@ class Game(object):
                     self.spawnWave()
 
         elif button == 3:
-            if notNull(self.building): self.building = None
-            if notNull(self.select): self.select = None
+            self.building = None
+            self.select = None
 
     # ----------------------------------------
 
@@ -518,8 +462,8 @@ class Game(object):
         :return: none
         """
         if key == K_ESCAPE:
-            if notNull(self.building): self.building = None
-            if notNull(self.select): self.select = None
+            self.building = None
+            self.select = None
         elif key == K_SPACE: self.pause = not self.pause
         elif key == K_0: self.building = 0
         elif key == K_1: self.building = 1
@@ -705,7 +649,7 @@ class Game(object):
         add next creep wave to game
         :return: none
         """
-        if self.debug:
+        if Game.DEBUG:
             self.wave = 0
         else:
             self.wave = self.wave + 1
@@ -747,7 +691,7 @@ class Game(object):
 
                 if creep.x > (self.grid.east + creep.half):
                     removeCreeps.append(_id)
-                    if not self.debug:
+                    if not Game.DEBUG:
                         self.mass = self.mass - creep.damage
                     self.statCreepsEscaped = self.statCreepsEscaped + 1
                     continue

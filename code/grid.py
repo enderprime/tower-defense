@@ -4,7 +4,7 @@
 [D] tower defense grid class
 [E] ender.prime@gmail.com
 [F] grid.py
-[V] 02.13.17
+[V] 02.14.17
 """
 
 from bool import *
@@ -20,35 +20,35 @@ class Grid(object):
     """
     represents game board using 2d array of cells
     """
-    BASE = (21, 13)                         # base area dimensions: (columns, rows)
-    SPACE = (3, 0)                          # space around base area: (columns, rows)
-
-    COLS = (2 * SPACE[0]) + BASE[0]         # total columns
-    ROWS = (2 * SPACE[1]) + BASE[1]         # total rows
-
-    INDEXES = (COLS, ROWS)                  # total dimensions
-    CENTER = (COLS // 2, ROWS // 2)         # center index
-    FUZZ = 1 - (1 / (COLS * ROWS))          # used in pathfinding
-
-    WIDTH = COLS * Cell.DIM                 # width in pixels
-    HEIGHT = ROWS * Cell.DIM                # height in pixels
-
     # relative indexes for adjacent cells
-    ADJACENT_ALL = ((1, 0), (1, 1), (1, -1), (0, 1), (0, -1), (-1, 0), (-1, 1), (-1, -1))
-    ADJACENT_DIAG = ((1, 1), (1, -1), (-1, 1), (-1, -1))
-    ADJACENT_ORTHO = ((1, 0), (0, 1), (0, -1), (-1, 0))
+    ADJACENT_ALL = ((-1, 0), (-1, 1), (-1, -1), (0, 1), (0, -1), (1, 0), (1, 1), (1, -1))
+    ADJACENT_DIAG = ((-1, 1), (-1, -1), (1, 1), (1, -1))
+    ADJACENT_ORTHO = ((-1, 0), (0, 1), (0, -1), (1, 0))
+
+    BASE = (21, 13)                             # base area dimensions
+    SPACE = (3, 0)                              # space around base area
+
+    COLS = (2 * SPACE[0]) + BASE[0]             # total columns
+    ROWS = (2 * SPACE[1]) + BASE[1]             # total rows
+
+    INDEXES = (COLS, ROWS)                      # total dimensions
+    CENTER = (COLS // 2, ROWS // 2)             # center index
+    FUZZ = 1 - (1 / (COLS * ROWS))              # used in pathfinding
+
+    WIDTH = COLS * Cell.DIM                     # width in pixels
+    HEIGHT = ROWS * Cell.DIM                    # height in pixels
 
     BASE_EAST = BASE[0] + SPACE[0] - 1          # base area east column value
     BASE_NORTH = SPACE[1]                       # base area north row value
     BASE_SOUTH = BASE[1] + SPACE[1] - 1         # base area south row value
     BASE_WEST = SPACE[0]                        # base area west column value
 
-    BASE_NE = BASE_EAST, BASE_NORTH             # base area northeast index: (column, row)
-    BASE_NW = BASE_WEST, BASE_NORTH             # base area northwest index: (column, row)
-    BASE_SE = BASE_EAST, BASE_SOUTH             # base area southeast index: (column, row)
-    BASE_SW = BASE_WEST, BASE_SOUTH             # base area southwest index: (column, row)
+    BASE_NE = BASE_EAST, BASE_NORTH             # base area northeast index
+    BASE_NW = BASE_WEST, BASE_NORTH             # base area northwest index
+    BASE_SE = BASE_EAST, BASE_SOUTH             # base area southeast index
+    BASE_SW = BASE_WEST, BASE_SOUTH             # base area southwest index
 
-    BASE_BOUNDS = BASE_NW + BASE_SE             # base area index bounds: (west, north, east, south)
+    BASE_BOUNDS = BASE_NW + BASE_SE             # base area index bounds
     
     PATH_START = (BASE_WEST - 1, CENTER[1])     # first index on main path
     PATH_GOAL = (BASE_EAST + 1, CENTER[1])      # last index on main path
@@ -81,6 +81,9 @@ class Grid(object):
                     cell.base = True
                 if not rowBase:
                     cell.open = False
+
+                if col >= Grid.BASE_EAST:
+                    cell.gx = Cell.MOVE_COST
 
                 lst.append(cell)
             self.cells.append(lst)
@@ -184,6 +187,25 @@ class Grid(object):
     # ----------------------------------------
 
     @classmethod
+    def gx(cls, start, goal):
+        """
+        :param start: (x, y)
+        :param goal: (x, y)
+        :return: movement cost from start to goal
+        """
+        xStart, yStart = start
+        xGoal, yGoal = goal
+        a = abs(xStart - xGoal)
+        b = abs(yStart - yGoal)
+
+        if (a - b) == 0:
+            return Cell.MOVE_DIAG
+        else:
+            return Cell.MOVE_COST
+
+    # ----------------------------------------
+
+    @classmethod
     def hxDiagonal(cls, start, goal):
         """
         :param start: (x, y)
@@ -196,7 +218,7 @@ class Grid(object):
         b = abs(yStart - yGoal)
         hx = ((a + b) - (6 * min(a, b)))
 
-        return hx * Grid.FUZZ
+        return Cell.MOVE_COST * hx * Grid.FUZZ
 
     # ----------------------------------------
 
@@ -213,7 +235,7 @@ class Grid(object):
         b = yStart - yGoal
         hx = math.hypot(a, b)
 
-        return hx * Grid.FUZZ
+        return Cell.MOVE_COST * hx * Grid.FUZZ
 
     # ----------------------------------------
 
@@ -230,7 +252,7 @@ class Grid(object):
         b = abs(yStart - yGoal)
         hx = (a + b)
 
-        return hx * Grid.FUZZ
+        return Cell.MOVE_COST * hx * Grid.FUZZ
 
     # ----------------------------------------
 
@@ -247,7 +269,7 @@ class Grid(object):
         b = abs(yStart - yGoal)
         hx = max(a, b)
 
-        return hx * Grid.FUZZ
+        return Cell.MOVE_COST * hx * Grid.FUZZ
 
     # ----------------------------------------
 
@@ -479,22 +501,14 @@ class Grid(object):
             for index in self.adjOpenPath(current):
                 xAdj, yAdj = index
                 node = grid[xAdj][yAdj]
-                if xAdj == Grid.BASE_EAST:
-                    gx = 10
-                elif (abs(x - xAdj) + abs(y - yAdj)) == 2:
-                    gx = grid[x][y].gx + 14
-                else:
-                    gx = grid[x][y].gx + 10
+                gx = grid[x][y].gx + Grid.gx(current, index)
                 if gx < node.gx:
                     if index in openSet: del openSet[index]
                     if index in closedSet: del closedSet[index]
                 if (not (index in openSet)) and (not (index in closedSet)):
                     node.gx = gx
-                    node.hx = 10 * Grid.hxDiagonal(Grid.PATH_GOAL, index)
-                    if xAdj == Grid.BASE_EAST:
-                        node.parent = (xAdj + 1, yAdj)
-                    else:
-                        node.parent = current
+                    node.hx = Grid.hxDiagonal(Grid.PATH_GOAL, index)
+                    node.parent = current
                     openSet.update({index: node.fx})
 
         for lst in self.cells:

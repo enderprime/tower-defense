@@ -1,32 +1,12 @@
 # tower-defense
 tower defense game
 
-01.23.17
+- python 3.6, pygame 1.9.2
+- cell, grid, game, creep, and tower classes
+- open map with dynamic A* pathfinding and path highlighting
+- 100 creep waves on timers, wih ramped stats and boss waves
+- creep types: fast, extra health, health regen, shielded, swarm, carrier, stealth
+- 5 ranks per tower with ramped costs and stat improvements
+- tower types: gun, cannon, missle, dot, rail, cluster, support
+- keyboard and mouse input, cell highlighting, cell selection
 
-- cell, grid, game classes
-- basic display
-- basic game loop
-
-01.30.17
-
-- A* pathfinder
-- creep and tower classes
-- tower build functionality
-
-02.04.17
-
-- creep and tower images
-- updated A* for better diagonals
-
-02.10.17
-
-- split A* into separate methods for creep vs grid
-- updated adjacent and hx methods for speed
-- basic spawnWave() functionality
-- creep movement logic
-- victory conditions
-
-02.13.17
-
-- refactored various class methods into class variables for speed
-- refactored grid pathfinding strategy and creep movement for speed

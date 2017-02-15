@@ -4,7 +4,7 @@
 [D] tower defense cell class
 [E] ender.prime@gmail.com
 [F] cell.py
-[V] 02.13.17
+[V] 02.14.17
 """
 
 from bool import *
@@ -20,6 +20,9 @@ class Cell(object):
     """
     DIM = 48            # cell size in pixels
     HALF = DIM // 2     # half size in pixels
+
+    MOVE_COST = 10      # default move cost between cells
+    MOVE_DIAG = 14      # diagonal move cost between cells
 
     # ----------------------------------------
 

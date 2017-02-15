@@ -4,7 +4,7 @@
 [D] tower defense tower class
 [E] ender.prime@gmail.com
 [F] tower.py
-[V] 02.13.17
+[V] 02.14.17
 """
 
 from bool import *
