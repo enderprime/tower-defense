@@ -21,8 +21,7 @@ class Tower(object):
 
     def __init__(self, _id):
 
-        # _id == unique int, assigned on spawn
-        self._id = _id
+        self._id = _id              # unique int, assigned on spawn
 
         self.ai = 0                 # tower type
         self.angle = 0.0

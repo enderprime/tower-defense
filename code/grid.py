@@ -20,6 +20,7 @@ class Grid(object):
     """
     represents game board using 2d array of cells
     """
+
     # relative indexes for adjacent cells
     ADJACENT_ALL = ((-1, 0), (-1, 1), (-1, -1), (0, 1), (0, -1), (1, 0), (1, 1), (1, -1))
     ADJACENT_DIAG = ((-1, 1), (-1, -1), (1, 1), (1, -1))
@@ -50,8 +51,8 @@ class Grid(object):
 
     BASE_BOUNDS = BASE_NW + BASE_SE             # base area index bounds
     
-    PATH_START = (BASE_WEST - 1, CENTER[1])     # first index on main path
-    PATH_GOAL = (BASE_EAST + 1, CENTER[1])      # last index on main path
+    PATH_START = (0, CENTER[1])                         # first index on main path
+    PATH_GOAL = (BASE_EAST + SPACE[0], CENTER[1])       # last index on main path
 
     # ----------------------------------------
 
@@ -548,12 +549,11 @@ class Grid(object):
         :return: cell index: (column, row) at point, or None if point is outside bounds
         """
         if self.pointIsValid(point):
-            x = int(round(point[0], 0))
-            y = int(round(point[1], 0))
+            x, y = point
             x = x - self.west
             y = y - self.north
-            col = x // Cell.DIM
-            row = y // Cell.DIM
+            col = int(x // Cell.DIM)
+            row = int(y // Cell.DIM)
             return col, row
         else:
             return None

@@ -26,7 +26,7 @@ class Game(object):
     core game logic
     """
 
-    DEBUG = False           # debug mode for testing
+    DEBUG = True           # debug mode for testing
     FPS = 25                # frames per second
     TICK = 1000 // FPS      # time in ms per game loop
 
@@ -36,6 +36,11 @@ class Game(object):
 
     WIDTH = Grid.WIDTH + SIDEBAR                # width in pixels
     HEIGHT = HEADER + Grid.HEIGHT + FOOTER      # height in pixels
+
+    # new game button bounds
+    BTN_NEW_X = WIDTH - (SIDEBAR // 2) - 64
+    BTN_NEW_Y = (HEADER // 2) - 22
+    BTN_NEW = (BTN_NEW_X, BTN_NEW_Y, BTN_NEW_X + 128, BTN_NEW_Y + 36)
 
     # next button bounds
     BTN_NEXT_X = 1100
@@ -56,6 +61,9 @@ class Game(object):
     COLOR_PURPLE =  (102, 0, 102)
     COLOR_RED =     (128, 28, 28)
     COLOR_WHITE =   (255, 255, 255)
+
+    WAVE_MAX = 100
+    WAVE_TIMER = 42     # seconds
 
     IMAGES = \
         {
@@ -92,7 +100,9 @@ class Game(object):
             IMG_MASS_19: pygame.image.load(IMG_MASS_19),
             IMG_MASS_20: pygame.image.load(IMG_MASS_20),
 
-            IMG_NEXT: pygame.image.load(IMG_NEXT),
+            IMG_NEW: pygame.image.load(IMG_NEW),
+            IMG_NEXT_ACTIVE: pygame.image.load(IMG_NEXT_ACTIVE),
+            IMG_NEXT_INACTIVE: pygame.image.load(IMG_NEXT_INACTIVE),
             IMG_PAUSE: pygame.image.load(IMG_PAUSE),
             IMG_PLAY: pygame.image.load(IMG_PLAY),
             IMG_SPEED_FAST: pygame.image.load(IMG_SPEED_FAST),
@@ -109,14 +119,110 @@ class Game(object):
             IMG_TOWER_8: pygame.image.load(IMG_TOWER_8)
         }
 
-    WAVE_MAX = 100
-    WAVE_TIMER = 30     # seconds
-
     # creep waves: key = wave number, value = list of creep groups: (creep ai, creep count)
     WAVES = \
         {
-            0: [(1, 20)],
-            1: [(1, 20)]
+            0:   [(1, 20)],
+            1:   [(1, 20)],
+            2:   [(1, 20)],
+            3:   [(1, 20)],
+            4:   [(1, 20)],
+            5:   [(1, 20)],
+            6:   [(1, 20)],
+            7:   [(1, 20)],
+            8:   [(1, 20)],
+            9:   [(1, 20)],
+            10:  [(1, 20)],
+            11:  [(1, 20)],
+            12:  [(1, 20)],
+            13:  [(1, 20)],
+            14:  [(1, 20)],
+            15:  [(1, 20)],
+            16:  [(1, 20)],
+            17:  [(1, 20)],
+            18:  [(1, 20)],
+            19:  [(1, 20)],
+            20:  [(1, 20)],
+            21:  [(1, 20)],
+            22:  [(1, 20)],
+            23:  [(1, 20)],
+            24:  [(1, 20)],
+            25:  [(1, 20)],
+            26:  [(1, 20)],
+            27:  [(1, 20)],
+            28:  [(1, 20)],
+            29:  [(1, 20)],
+            30:  [(1, 20)],
+            31:  [(1, 20)],
+            32:  [(1, 20)],
+            33:  [(1, 20)],
+            34:  [(1, 20)],
+            35:  [(1, 20)],
+            36:  [(1, 20)],
+            37:  [(1, 20)],
+            38:  [(1, 20)],
+            39:  [(1, 20)],
+            40:  [(1, 20)],
+            41:  [(1, 20)],
+            42:  [(1, 20)],
+            43:  [(1, 20)],
+            44:  [(1, 20)],
+            45:  [(1, 20)],
+            46:  [(1, 20)],
+            47:  [(1, 20)],
+            48:  [(1, 20)],
+            49:  [(1, 20)],
+            50:  [(1, 20)],
+            51:  [(1, 20)],
+            52:  [(1, 20)],
+            53:  [(1, 20)],
+            54:  [(1, 20)],
+            55:  [(1, 20)],
+            56:  [(1, 20)],
+            57:  [(1, 20)],
+            58:  [(1, 20)],
+            59:  [(1, 20)],
+            60:  [(1, 20)],
+            61:  [(1, 20)],
+            62:  [(1, 20)],
+            63:  [(1, 20)],
+            64:  [(1, 20)],
+            65:  [(1, 20)],
+            66:  [(1, 20)],
+            67:  [(1, 20)],
+            68:  [(1, 20)],
+            69:  [(1, 20)],
+            70:  [(1, 20)],
+            71:  [(1, 20)],
+            72:  [(1, 20)],
+            73:  [(1, 20)],
+            74:  [(1, 20)],
+            75:  [(1, 20)],
+            76:  [(1, 20)],
+            77:  [(1, 20)],
+            78:  [(1, 20)],
+            79:  [(1, 20)],
+            80:  [(1, 20)],
+            81:  [(1, 20)],
+            82:  [(1, 20)],
+            83:  [(1, 20)],
+            84:  [(1, 20)],
+            85:  [(1, 20)],
+            86:  [(1, 20)],
+            87:  [(1, 20)],
+            88:  [(1, 20)],
+            89:  [(1, 20)],
+            90:  [(1, 20)],
+            91:  [(1, 20)],
+            92:  [(1, 20)],
+            93:  [(1, 20)],
+            94:  [(1, 20)],
+            95:  [(1, 20)],
+            96:  [(1, 20)],
+            97:  [(1, 20)],
+            98:  [(1, 20)],
+            99:  [(1, 20)],
+            100: [(1, 20)]
         }
 
     # ----------------------------------------
@@ -227,6 +333,7 @@ class Game(object):
         draw interface header on screen
         :return: none
         """
+
         rect = pygame.Rect(0, 0, Game.WIDTH, Game.HEADER)
         self.window.fill(Game.COLOR_BLACK, rect)
 
@@ -243,7 +350,7 @@ class Game(object):
         else:
             img = PATH_IMG + 'mass-' + str(self.mass) + '.png'
 
-        x = x + 60
+        x = x + 65
         y = (Game.HEADER // 2) - 18
         rect = pygame.Rect(x, y, 282, 28)
         self.window.blit(Game.IMAGES[img], rect)
@@ -257,7 +364,7 @@ class Game(object):
         text = font.render(str(self.energy), True, color)
         self.window.blit(text, (x, y))
 
-        # wave
+        # wave number
         x = x + 100
         self.window.blit(self._text['WAVE'], (x, y))
 
@@ -273,7 +380,7 @@ class Game(object):
         self.window.blit(self._text['NEXT'], (x, y))
 
         x = x + 70
-        if self.waveTimer == 0:
+        if self.waveTimer < 1:
             text = font.render('--', True, color)
         else:
             text = font.render(str(int(self.waveTimer)), True, color)
@@ -290,7 +397,10 @@ class Game(object):
         self.window.blit(img, rect)
 
         # next button
-        img = Game.IMAGES[IMG_NEXT]
+        if self.wave < Game.WAVE_MAX:
+            img = Game.IMAGES[IMG_NEXT_ACTIVE]
+        else:
+            img = Game.IMAGES[IMG_NEXT_INACTIVE]
         x1, y1, x2, y2 = Game.BTN_NEXT
         rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
         self.window.blit(img, rect)
@@ -336,9 +446,9 @@ class Game(object):
                     if notNull(self.building):
                         self.select = None
                         if cell.open or (cell.build == 0):      # NTS: update with path blocking logic
-                            color = Game.COLOR_RED
-                        else:
                             color = Game.COLOR_GREEN
+                        else:
+                            color = Game.COLOR_RED
                         rect = pygame.Rect(cell.west, cell.north, Cell.DIM, Cell.DIM)
                         self.window.fill(color, rect)
 
@@ -384,7 +494,7 @@ class Game(object):
         if bool(self.creeps):
             for _id, creep in self.creeps.items():
                 x, y = creep.NW
-                rect = pygame.Rect(x, y, creep.size, creep.size)
+                rect = pygame.Rect(x, y, creep._size, creep._size)
                 img = Game.IMAGES[creep.image]
                 if creep.angle != 0:
                     img = pygame.transform.rotate(img, math.degrees(creep.angle))
@@ -401,6 +511,12 @@ class Game(object):
         self.window.fill(Game.COLOR_BLACK, rect)
 
         font = self._fonts['LUCID_20']
+
+        # new game button
+        img = Game.IMAGES[IMG_NEW]
+        x1, y1, x2, y2 = Game.BTN_NEW
+        rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
+        self.window.blit(img, rect)
 
         # debug info
         if Game.DEBUG:
@@ -449,6 +565,10 @@ class Game(object):
                 if (west <= x <= east) and (north <= y <= south):
                     self.spawnWave()
 
+                west, north, east, south = Game.BTN_NEW
+                if (west <= x <= east) and (north <= y <= south):
+                    self.new()
+
         elif button == 3:
             self.building = None
             self.select = None
@@ -488,12 +608,16 @@ class Game(object):
 
         ####
 
-        wait = True
-        while wait:
+        while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
+                elif event.type == MOUSEBUTTONUP:
+                    x, y = event.pos
+                    west, north, east, south = Game.BTN_NEW
+                    if (west <= x <= east) and (north <= y <= south):
+                        self.new()
 
     # ----------------------------------------
 
@@ -523,9 +647,10 @@ class Game(object):
                 elif event.type == USEREVENT + 1:
                     self.time = self.time + 1
                     if not self.pause:
-                        self.waveTimer = self.waveTimer - 1
-                        if self.waveTimer < 1:
-                            self.spawnWave()
+                        if self.wave != Game.WAVE_MAX:
+                            self.waveTimer = self.waveTimer - 1
+                            if self.waveTimer < 1:
+                                self.spawnWave()
 
             self.drawHeader()
             self.drawFooter()
@@ -586,7 +711,7 @@ class Game(object):
             creep.rank = self.wave
             creep.energy = (creep.rank // 5) + 1
             creep.mass = (5 * creep.rank) + 20
-            creep.speed = 48
+            creep.speed = 50
         elif ai == 2:
             pass
         elif ai == 3:
@@ -624,7 +749,13 @@ class Game(object):
     # ----------------------------------------
 
     def spawnTower(self, ai, col, row):
-
+        """
+        add tower to game
+        :param ai: tower type
+        :param col: column value
+        :param row: row value
+        :return: none
+        """
         self._idTower = self._idTower + 1
 
         tower = Tower(self._idTower)
@@ -649,29 +780,25 @@ class Game(object):
         add next creep wave to game
         :return: none
         """
-        if Game.DEBUG:
-            self.wave = 0
-        else:
-            self.wave = self.wave + 1
-
-        if self.wave in Game.WAVES:
-            for creeps in Game.WAVES[self.wave]:
+        if (self.wave + 1) <= Game.WAVE_MAX:
+            if Game.DEBUG:
+                self.wave = 0
+            else:
+                self.wave = self.wave + 1
+            for creeps in Game.WAVES.get(self.wave, []):
                 ai, count = creeps
                 for i in range(count):
                     creep = self.spawnCreep(ai)
                     if ai < 10:
-                        col = random.randint(1, count)
                         row = random.randint(Grid.BASE_NORTH, Grid.BASE_SOUTH)
                     else:
-                        col = 3
                         row = random.randint(Grid.BASE_NORTH + 2, Grid.BASE_SOUTH - 2)
 
-                    creep.x = - (col * Cell.DIM) - random.randint(1, Cell.DIM)
-                    creep.y = self.grid.north + (row * Cell.DIM) + random.randint(1, Cell.DIM)
+                    creep.x = - random.randint(100, 800)
+                    creep.y = self.grid.north + (row * Cell.DIM) + Cell.HALF - 1
 
             if self.wave != Game.WAVE_MAX:
                 self.waveTimer = Game.WAVE_TIMER
-
             self.pause = False
 
     # ----------------------------------------
@@ -689,7 +816,7 @@ class Game(object):
                 move = max(1, creep.speed) * self.delta / 1000
                 creep.index = self.grid.pointToIndex(creep.xy)
 
-                if creep.x > (self.grid.east + creep.half):
+                if creep.x > (self.grid.east + creep._half):
                     removeCreeps.append(_id)
                     if not Game.DEBUG:
                         self.mass = self.mass - creep.damage

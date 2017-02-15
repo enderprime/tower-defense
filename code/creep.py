@@ -16,10 +16,12 @@ class Creep(object):
     """
     killable enemy
     """
+
     def __init__(self, _id):
 
-        # _id == unique int, assigned on spawn
-        self._id = _id
+        self._id = _id          # unique int, assigned on spawn
+        self._size = 48         # creep size in pixels
+        self._half = 24         # half size in pixels
 
         self.ai = 0             # creep type
         self.angle = 0.0
@@ -31,7 +33,6 @@ class Creep(object):
         self.mass = 1           # damage required to kill
         self.name = ''
         self.rank = 1           # creep level
-        self.size = 48          # pixels
         self.speed = 48         # pixels per second, roughly
         self.target = ()        # index of next cell to visit
         self.x = 0
@@ -53,16 +54,7 @@ class Creep(object):
         """
         :return: east x value
         """
-        return self.x + self.half - 1
-
-     # ----------------------------------------
-
-    @property
-    def half(self):
-        """
-        :return: size in pixels // 2
-        """
-        return self.size // 2
+        return self.x + self._half - 1
 
     # ----------------------------------------
 
@@ -83,7 +75,7 @@ class Creep(object):
         """
         :return: north y value
         """
-        return self.y - self.half
+        return self.y - self._half
 
     # ----------------------------------------
 
@@ -110,7 +102,7 @@ class Creep(object):
         """
         :return: south y value
         """
-        return self.y + self.half - 1
+        return self.y + self._half - 1
 
     # ----------------------------------------
 
@@ -137,7 +129,7 @@ class Creep(object):
         """
         :return: west x value
         """
-        return self.x - self.half
+        return self.x - self._half
 
     # ----------------------------------------
 

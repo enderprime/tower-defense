@@ -18,8 +18,9 @@ class Cell(object):
     """
     represents a single game board square
     """
+
     DIM = 48            # cell size in pixels
-    HALF = DIM // 2     # half size in pixels
+    HALF = 24           # half size in pixels
 
     MOVE_COST = 10      # default move cost between cells
     MOVE_DIAG = 14      # diagonal move cost between cells
