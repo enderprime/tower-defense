@@ -51,8 +51,8 @@ class Grid(object):
 
     BASE_BOUNDS = BASE_NW + BASE_SE             # base area index bounds
     
-    PATH_START = (0, CENTER[1])                         # first index on main path
-    PATH_GOAL = (BASE_EAST + SPACE[0], CENTER[1])       # last index on main path
+    PATH_START = (0, CENTER[1])                             # first index on main path
+    PATH_GOAL = (BASE_EAST + SPACE[0] - 1, CENTER[1])       # last index on main path
 
     # ----------------------------------------
 
@@ -88,8 +88,6 @@ class Grid(object):
 
                 lst.append(cell)
             self.cells.append(lst)
-
-        self.path = self.pathfinder()       # main path index list
 
     # ----------------------------------------
 
@@ -473,17 +471,38 @@ class Grid(object):
 
     # ----------------------------------------
 
+    def path(self, start = None):
+        """
+        :param start: (column, row)
+        :return: list of indexes from start to Grid.PATH_GOAL
+        """
+        path = []
+
+        if not bool(start):
+            start = Grid.PATH_START
+
+        xStart, yStart = start
+        cell = self.cells[xStart][yStart]
+
+        while (cell.index != Grid.PATH_GOAL) and bool(cell.path):
+            path.append(cell.path)
+            x, y = cell.path
+            cell = self.cells[x][y]
+
+        return path
+
+    # ----------------------------------------
+
     def pathfinder(self):
         """
         update path destination indexes for all cells
-        :return: main path index list from Grid.PATH_START to Grid.PATH_GOAL
+        :return: none
         """
         for lst in self.cells:
             for cell in lst:
                 cell.path = None
 
         grid = copy.deepcopy(self.cells)
-        xStart, yStart = Grid.PATH_START
         xGoal, yGoal = Grid.PATH_GOAL
 
         openSet = {}
@@ -516,15 +535,6 @@ class Grid(object):
             for cell in lst:
                 x, y = cell.index
                 cell.path = grid[x][y].parent
-
-        cell = grid[xStart][yStart]
-        path = [cell.index]
-        while (cell.index != Grid.PATH_GOAL) and bool(cell.parent):
-            path.append(cell.parent)
-            x, y = cell.parent
-            cell = grid[x][y]
-
-        return path
 
     # ----------------------------------------
 
@@ -568,4 +578,4 @@ class Grid(object):
             for cell in lst:
                 cell.reset()
 
-        self.pathUpdate()
+        self.pathfinder()

@@ -476,7 +476,7 @@ class Game(object):
 
         # path
         if self.showPath:
-            for index in self.grid.path:
+            for index in self.grid.path():
                 p = self.grid[index].xy
                 pygame.draw.circle(self.window, Game.COLOR_ORANGE, p, 3)
 
@@ -553,7 +553,7 @@ class Game(object):
                     # NTS: update with valid path logic
                     if notNull(self.building) and (cell.open or (cell.build == 0)):
                         cell.build = self.spawnTower(self.building, col, row)
-                        self.grid.path = self.grid.pathfinder()
+                        self.grid.pathfinder()
                     elif notNull(cell.build):
                         self.select = index
             else:
@@ -670,6 +670,8 @@ class Game(object):
         new game logic
         :return: none
         """
+        self.grid.reset()
+
         self._idCreep = 0
         self._idTower = 0
 
