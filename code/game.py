@@ -295,6 +295,27 @@ class Game(object):
 
     # ----------------------------------------
 
+    def buildIsAllowed(self, index):
+        """
+        :param index: (column, row) where building will occur
+        :return: true if building at index would not block all paths
+        """
+        grid = copy.deepcopy(self.grid)
+
+        if not grid[index].open:
+            return False
+        else:
+            grid[index].open = False
+            grid.pathfinder()
+            indexes = [Grid.PATH_START] + list(self.creepsByIndex().keys())
+            for index in indexes:
+                path = grid.path(index)
+                if (not bool(path)) or path[-1] != Grid.PATH_GOAL:
+                    return False
+            return True
+
+    # ----------------------------------------
+
     def creepsAtIndex(self, index):
         """
         :param index: (column, row)
@@ -319,10 +340,11 @@ class Game(object):
 
         if bool(self.creeps):
             for _id, creep in self.creeps.items():
-                if creep.index in indexes:
-                    indexes[index] = indexes[index].append(creep._id)
+                index = self.grid.pointToIndex(creep.xy)
+                if index in indexes:
+                    indexes[index].append(creep._id)
                 else:
-                    indexes.update({creep.index: [creep._id]})
+                    indexes.update({index: [creep._id]})
 
         return indexes
 
@@ -442,15 +464,13 @@ class Game(object):
             index = self.grid.pointToIndex(self.mouse)
             if bool(index):
                 cell = self.grid[index]
-                if cell.base:
-                    if notNull(self.building):
-                        self.select = None
-                        if cell.open or (cell.build == 0):      # NTS: update with path blocking logic
-                            color = Game.COLOR_GREEN
-                        else:
-                            color = Game.COLOR_RED
-                        rect = pygame.Rect(cell.west, cell.north, Cell.DIM, Cell.DIM)
-                        self.window.fill(color, rect)
+                if cell.base and notNull(self.building):
+                    if self.buildIsAllowed(index):
+                        color = Game.COLOR_GREEN
+                    else:
+                        color = Game.COLOR_RED
+                    rect = pygame.Rect(cell.west, cell.north, Cell.DIM, Cell.DIM)
+                    self.window.fill(color, rect)
 
         # selected
         if notNull(self.select):
@@ -476,7 +496,7 @@ class Game(object):
 
         # path
         if self.showPath:
-            for index in self.grid.path:
+            for index in self.grid.path():
                 p = self.grid[index].xy
                 pygame.draw.circle(self.window, Game.COLOR_ORANGE, p, 3)
 
@@ -550,10 +570,9 @@ class Game(object):
                 cell = self.grid[index]
                 col, row = index
                 if cell.base:
-                    # NTS: update with valid path logic
-                    if notNull(self.building) and (cell.open or (cell.build == 0)):
+                    if notNull(self.building) and self.buildIsAllowed(index):
                         cell.build = self.spawnTower(self.building, col, row)
-                        self.grid.path = self.grid.pathfinder()
+                        self.grid.pathfinder()
                     elif notNull(cell.build):
                         self.select = index
             else:
@@ -598,6 +617,9 @@ class Game(object):
         elif key == K_n: self.spawnWave()
         elif key == K_p: self.showPath = not self.showPath
 
+        if bool(self.building):
+            self.select = None
+
     # ----------------------------------------
 
     def end(self):
@@ -632,6 +654,11 @@ class Game(object):
                 break
 
             if not self.pause:
+                for n in self.grid:
+                    if n.build:
+                        n.open = False
+                    else:
+                        n.open = True
                 self.updateCreeps()
 
             for event in pygame.event.get():
@@ -670,6 +697,8 @@ class Game(object):
         new game logic
         :return: none
         """
+        self.grid.reset()
+
         self._idCreep = 0
         self._idTower = 0
 
