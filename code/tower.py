@@ -4,20 +4,19 @@
 [D] tower defense tower class
 [E] ender.prime@gmail.com
 [F] tower.py
-[V] 02.14.17
+[V] 02.19.17
 """
 
-from bool import *
-from const import *
+from boolean import *
+from constant import *
+from grid import *
 
 # --------------------------------------------------------------------------------------------------------------------
 
 class Tower(object):
     """
-    buildable tower
+    base class: buildable tower that kills creeps
     """
-
-    # ----------------------------------------
 
     def __init__(self, _id):
 
@@ -33,6 +32,7 @@ class Tower(object):
         self.energy = 1             # energy required to build
         self.imgFire = ''
         self.imgHit = ''
+        self.imgTower = ''
         self.name = ''
         self.range = 1              # shot radius in cells
         self.rank = 1               # tower upgrade level
@@ -43,22 +43,154 @@ class Tower(object):
     # ----------------------------------------
 
     @property
-    def imgTower(self):
-        """
-        :return: image path
-        """
-        if 0 < self.ai < 8:
-            return PATH_IMG + 'tower-' + str(self.ai) + '-' + str(self.rank) + '.png'
-        else:
-            return PATH_IMG + 'tower-' + str(self.ai) + '.png'
-
-    # ----------------------------------------
-
-    @property
     def index(self):
         """
         :return: grid index: (column, row)
         """
         return self.col, self.row
+
+    # ----------------------------------------
+
+    def spawn(self, col, row):
+        """
+        add tower to game
+        :param col: column value
+        :param row: row value
+        :return: none
+        """
+        self.col = col
+        self.row = row
+
+# --------------------------------------------------------------------------------------------------------------------
+
+class TowerBase(Tower):
+    """
+    base tower, blocks pathing but does not fire
+    """
+
+    def __init__(self, _id):
+        super(self.__class__, self).__init__(_id)
+
+        self.imgTower = PATH_IMG + 'tower-base.png'
+
+    # ----------------------------------------
+
+# --------------------------------------------------------------------------------------------------------------------
+
+class TowerGun(Tower):
+    """
+    tower type 1
+    """
+
+    def __init__(self, _id):
+        super(self.__class__, self).__init__(_id)
+
+        self.ai = 1
+        self.imgTower = PATH_IMG + 'tower-1-1.png'
+
+    # ----------------------------------------
+
+# --------------------------------------------------------------------------------------------------------------------
+
+class TowerCannon(Tower):
+    """
+    tower type 2
+    """
+
+    def __init__(self, _id):
+        super(self.__class__, self).__init__(_id)
+
+        self.ai = 2
+        self.imgTower = PATH_IMG + 'tower-2-1.png'
+
+    # ----------------------------------------
+
+# --------------------------------------------------------------------------------------------------------------------
+
+class TowerMissle(Tower):
+    """
+    tower type 3
+    """
+
+    def __init__(self, _id):
+        super(self.__class__, self).__init__(_id)
+
+        self.ai = 3
+        self.imgTower = PATH_IMG + 'tower-3-1.png'
+
+    # ----------------------------------------
+
+# --------------------------------------------------------------------------------------------------------------------
+
+class TowerSlow(Tower):
+    """
+    tower type 4
+    """
+
+    def __init__(self, _id):
+        super(self.__class__, self).__init__(_id)
+
+        self.ai = 4
+        self.imgTower = PATH_IMG + 'tower-4-1.png'
+
+    # ----------------------------------------
+
+# --------------------------------------------------------------------------------------------------------------------
+
+class TowerLaser(Tower):
+    """
+    tower type 5
+    """
+
+    def __init__(self, _id):
+        super(self.__class__, self).__init__(_id)
+
+        self.ai = 5
+        self.imgTower = PATH_IMG + 'tower-5-1.png'
+
+    # ----------------------------------------
+
+# --------------------------------------------------------------------------------------------------------------------
+
+class TowerRail(Tower):
+    """
+    tower type 6
+    """
+
+    def __init__(self, _id):
+        super(self.__class__, self).__init__(_id)
+
+        self.ai = 6
+        self.imgTower = PATH_IMG + 'tower-6-1.png'
+
+    # ----------------------------------------
+
+# --------------------------------------------------------------------------------------------------------------------
+
+class TowerBash(Tower):
+    """
+    tower type 7
+    """
+
+    def __init__(self, _id):
+        super(self.__class__, self).__init__(_id)
+
+        self.ai = 7
+        self.imgTower = PATH_IMG + 'tower-7-1.png'
+
+    # ----------------------------------------
+
+# --------------------------------------------------------------------------------------------------------------------
+
+class TowerSupport(Tower):
+    """
+    tower type 8
+    """
+
+    def __init__(self, _id):
+        super(self.__class__, self).__init__(_id)
+
+        self.ai = 8
+        self.imgTower = PATH_IMG + 'tower-8.png'
 
     # ----------------------------------------

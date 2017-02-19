@@ -4,11 +4,11 @@
 [D] tower defense cell class
 [E] ender.prime@gmail.com
 [F] cell.py
-[V] 02.14.17
+[V] 02.19.17
 """
 
-from bool import *
-from const import *
+from boolean import *
+from constant import *
 
 import math
 
@@ -40,8 +40,8 @@ class Cell(object):
         self.parent = None      # used for pathfinding
 
         self.build = None       # if a tower is built here, holds tower _id
-        self.open = True        # true if cell is open for building
-        self.path = None        # if path is possible, holds next destination index
+        self.open = True        # true if cell is open for building / pathing
+        self.path = None        # if path is possible, holds destination index
 
     # ----------------------------------------
 

@@ -1,17 +1,22 @@
 """
 [A] Edward Rollins, Jr.
 [C] enderprime.com
-[D] tower defense constants
+[D] tower defense asset constants
 [E] ender.prime@gmail.com
 [F] const.py
-[V] 02.14.17
+[V] 02.18.17
 """
+
+import os
+import sys
+
+# ----------------------------------------
 
 # constant file used to speed development
 # fold into classes during refactoring
 
-PATH_GAME = 'E:/CODE/PI/tower-defense/'
-PATH_IMG = PATH_GAME + 'img/'
+PATH_GAME = os.path.dirname(__file__) +  '\\..\\'
+PATH_IMG = PATH_GAME + 'img\\'
 
 IMG_CREEP_01 = PATH_IMG + 'creep-01.png'
 
@@ -49,12 +54,12 @@ IMG_MASS_20 = PATH_IMG + 'mass-20.png'
 IMG_NEW = PATH_IMG + 'new.png'
 IMG_NEXT_ACTIVE = PATH_IMG + 'next-active.png'
 IMG_NEXT_INACTIVE = PATH_IMG + 'next-inactive.png'
+IMG_PATH = PATH_IMG + 'path.png'
 IMG_PAUSE = PATH_IMG + 'pause.png'
 IMG_PLAY = PATH_IMG + 'play.png'
 IMG_SPEED_FAST = PATH_IMG + 'speed-fast.png'
 IMG_SPEED_SLOW = PATH_IMG + 'speed-slow.png'
 
-IMG_TOWER_0 = PATH_IMG + 'tower-0.png'
 IMG_TOWER_1_1 = PATH_IMG + 'tower-1-1.png'
 IMG_TOWER_2_1 = PATH_IMG + 'tower-2-1.png'
 IMG_TOWER_3_1 = PATH_IMG + 'tower-3-1.png'
@@ -63,3 +68,4 @@ IMG_TOWER_5_1 = PATH_IMG + 'tower-5-1.png'
 IMG_TOWER_6_1 = PATH_IMG + 'tower-6-1.png'
 IMG_TOWER_7_1 = PATH_IMG + 'tower-7-1.png'
 IMG_TOWER_8 = PATH_IMG + 'tower-8.png'
+IMG_TOWER_BASE = PATH_IMG + 'tower-base.png'

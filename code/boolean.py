@@ -3,8 +3,8 @@
 [C] enderprime.com
 [D] predicate functions
 [E] ender.prime@gmail.com
-[F] bool.py
-[V] 01.22.17
+[F] boolean.py
+[V] 02.17.17
 """
 
 def isBool(v):   return type(v) is bool

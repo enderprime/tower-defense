@@ -4,12 +4,12 @@
 [D] tower defense grid class
 [E] ender.prime@gmail.com
 [F] grid.py
-[V] 02.14.17
+[V] 02.19.17
 """
 
-from bool import *
+from boolean import *
 from cell import *
-from const import *
+from constant import *
 
 import copy
 import math
@@ -26,55 +26,81 @@ class Grid(object):
     ADJACENT_DIAG = ((-1, 1), (-1, -1), (1, 1), (1, -1))
     ADJACENT_ORTHO = ((-1, 0), (0, 1), (0, -1), (1, 0))
 
-    BASE = (21, 13)                             # base area dimensions
-    SPACE = (3, 0)                              # space around base area
+    # index dimensions
+    BASE = (21, 13)
+    SPACE = (3, 0)
 
-    COLS = (2 * SPACE[0]) + BASE[0]             # total columns
-    ROWS = (2 * SPACE[1]) + BASE[1]             # total rows
+    COLS = BASE[0] + (2 * SPACE[0])
+    ROWS = BASE[1] + (2 * SPACE[1])
+    INDEXES = (COLS, ROWS)
 
-    INDEXES = (COLS, ROWS)                      # total dimensions
-    CENTER = (COLS // 2, ROWS // 2)             # center index
-    FUZZ = 1 - (1 / (COLS * ROWS))              # used in pathfinding
+    # base index boundaries
+    BASE_EAST = BASE[0] + SPACE[0] - 1
+    BASE_NORTH = SPACE[1]
+    BASE_SOUTH = BASE[1] + SPACE[1] - 1
+    BASE_WEST = SPACE[0]
 
-    WIDTH = COLS * Cell.DIM                     # width in pixels
-    HEIGHT = ROWS * Cell.DIM                    # height in pixels
+    BASE_CENTER = (COLS // 2, ROWS // 2)
+    BASE_NE = (BASE_EAST, BASE_NORTH)
+    BASE_NW = (BASE_WEST, BASE_NORTH)
+    BASE_SE = (BASE_EAST, BASE_SOUTH)
+    BASE_SW = (BASE_WEST, BASE_SOUTH)
+    BASE_BOUNDS = BASE_NW + BASE_SE
 
-    BASE_EAST = BASE[0] + SPACE[0] - 1          # base area east column value
-    BASE_NORTH = SPACE[1]                       # base area north row value
-    BASE_SOUTH = BASE[1] + SPACE[1] - 1         # base area south row value
-    BASE_WEST = SPACE[0]                        # base area west column value
+    # main path
+    PATH_FUZZ = 1 - (1 / (COLS * ROWS))
+    PATH_START = (0, BASE_CENTER[1])
+    PATH_GOAL = (BASE_EAST + SPACE[0] - 1, BASE_CENTER[1])
 
-    BASE_NE = BASE_EAST, BASE_NORTH             # base area northeast index
-    BASE_NW = BASE_WEST, BASE_NORTH             # base area northwest index
-    BASE_SE = BASE_EAST, BASE_SOUTH             # base area southeast index
-    BASE_SW = BASE_WEST, BASE_SOUTH             # base area southwest index
+    # pixel dimensions
+    WIDTH = COLS * Cell.DIM
+    HEIGHT = ROWS * Cell.DIM
 
-    BASE_BOUNDS = BASE_NW + BASE_SE             # base area index bounds
-    
-    PATH_START = (0, CENTER[1])                             # first index on main path
-    PATH_GOAL = (BASE_EAST + SPACE[0] - 1, CENTER[1])       # last index on main path
+    # top left corner
+    X = 0
+    Y = 84
+    XY = (X, Y)
+
+    # grid coordinate boundaries
+    XY_EAST = X + WIDTH - 1
+    XY_NORTH = Y
+    XY_SOUTH = Y + HEIGHT - 1
+    XY_WEST = X
+
+    XY_CENTER = (XY_WEST + (WIDTH // 2), XY_NORTH + (HEIGHT // 2))
+    XY_NE = (XY_EAST, XY_NORTH)
+    XY_NW = (XY_WEST, XY_NORTH)
+    XY_SE = (XY_EAST, XY_SOUTH)
+    XY_SW = (XY_WEST, XY_SOUTH)
+    XY_BOUNDS = XY_NW + XY_SE
+
+    # base coordinate boundaries
+    XY_BASE_EAST = X + ((BASE[0] + SPACE[0]) * Cell.DIM) - 1
+    XY_BASE_NORTH = Y + (SPACE[1] * Cell.DIM) - 1
+    XY_BASE_SOUTH = Y + ((BASE[1] + SPACE[1]) * Cell.DIM) - 1
+    XY_BASE_WEST = X + (SPACE[0] * Cell.DIM) - 1
+
+    XY_BASE_NE = (XY_BASE_EAST, XY_BASE_NORTH)
+    XY_BASE_NW = (XY_BASE_WEST, XY_BASE_NORTH)
+    XY_BASE_SE = (XY_BASE_EAST, XY_BASE_SOUTH)
+    XY_BASE_SW = (XY_BASE_WEST, XY_BASE_SOUTH)
+    XY_BASE_BOUNDS = XY_BASE_NW + XY_BASE_SE
 
     # ----------------------------------------
 
-    def __init__(self, x = 0, y = 0):
-
-        # (x, y) == top left point
-        self.x = x
-        self.y = y
+    def __init__(self):
 
         self.cells = []     # 2d array of cell objects
 
         for col in range(Grid.COLS):
             lst = []
             for row in range(Grid.ROWS):
-                x = self.west + (col * Cell.DIM) + Cell.HALF - 1
-                y = self.north + (row * Cell.DIM) + Cell.HALF - 1
 
                 cell = Cell()
                 cell.col = col
                 cell.row = row
-                cell.x = x
-                cell.y = y
+                cell.x = Grid.XY_WEST + (col * Cell.DIM) + Cell.HALF - 1
+                cell.y = Grid.XY_NORTH + (row * Cell.DIM) + Cell.HALF - 1
 
                 colBase = bool(Grid.BASE_WEST <= col <= Grid.BASE_EAST)
                 rowBase = bool(Grid.BASE_NORTH <= row <= Grid.BASE_SOUTH)
@@ -88,6 +114,8 @@ class Grid(object):
 
                 lst.append(cell)
             self.cells.append(lst)
+
+        self.pathfinder()
 
     # ----------------------------------------
 
@@ -108,20 +136,20 @@ class Grid(object):
 
     def __len__(self):
 
-        cols, rows = Grid.indexes()
+        cols, rows = Grid.INDEXES
         return cols * rows
 
     # ----------------------------------------
 
     def __repr__(self):
 
-        return 'Grid' + str(self.xy)
+        return 'Grid()'
 
     # ----------------------------------------
 
     def __str__(self):
 
-        cols, rows = Grid.indexes()
+        cols, rows = Grid.INDEXES
 
         s = ''
         for row in range(rows):
@@ -217,7 +245,7 @@ class Grid(object):
         b = abs(yStart - yGoal)
         hx = ((a + b) - (6 * min(a, b)))
 
-        return Cell.MOVE_COST * hx * Grid.FUZZ
+        return Cell.MOVE_COST * hx * Grid.PATH_FUZZ
 
     # ----------------------------------------
 
@@ -234,7 +262,7 @@ class Grid(object):
         b = yStart - yGoal
         hx = math.hypot(a, b)
 
-        return Cell.MOVE_COST * hx * Grid.FUZZ
+        return Cell.MOVE_COST * hx * Grid.PATH_FUZZ
 
     # ----------------------------------------
 
@@ -251,7 +279,7 @@ class Grid(object):
         b = abs(yStart - yGoal)
         hx = (a + b)
 
-        return Cell.MOVE_COST * hx * Grid.FUZZ
+        return Cell.MOVE_COST * hx * Grid.PATH_FUZZ
 
     # ----------------------------------------
 
@@ -268,7 +296,7 @@ class Grid(object):
         b = abs(yStart - yGoal)
         hx = max(a, b)
 
-        return Cell.MOVE_COST * hx * Grid.FUZZ
+        return Cell.MOVE_COST * hx * Grid.PATH_FUZZ
 
     # ----------------------------------------
 
@@ -286,105 +314,40 @@ class Grid(object):
 
     # ----------------------------------------
 
-    @property
-    def bounds(self):
+    @classmethod
+    def pointIsValid(cls, point):
         """
-        :return: bounding box points: (west, north, east, south)
+        :param point: (x, y)
+        :return: true if point is within grid bounds
         """
-        return self.NW + self.SE
+        if bool(point):
+            x, y = point
+            xValid = bool(Grid.XY_WEST <= x <= Grid.XY_EAST)
+            yValid = bool(Grid.XY_NORTH <= y <= Grid.XY_SOUTH)
+            return bool(xValid and yValid)
+        else:
+            return False
 
     # ----------------------------------------
 
-    @property
-    def center(self):
+    @classmethod
+    def pointToIndex(cls, point):
         """
-        :return: center point: (x, y)
+        :param point: (x, y)
+        :return: cell index: (column, row) at point, or None if point is outside bounds
         """
-        x = self.west + (Grid.WIDTH // 2)
-        y = self.north + (Grid.HEIGHT // 2)
+        x, y = point
+        x = int(round(x, 0))
+        y = int(round(y, 0))
 
-        return x, y
-
-    # ----------------------------------------
-
-    @property
-    def east(self):
-        """
-        :return: east x value
-        """
-        return self.x + Grid.WIDTH - 1
-
-    # ----------------------------------------
-
-    @property
-    def north(self):
-        """
-        :return: north y value
-        """
-        return self.y
-
-    # ----------------------------------------
-
-    @property
-    def NE(self):
-        """
-        :return: northeast point: (x, y)
-        """
-        return self.east, self.north
-
-    # ----------------------------------------
-
-    @property
-    def NW(self):
-        """
-        :return: northwest point: (x, y)
-        """
-        return self.west, self.north
-
-    # ----------------------------------------
-
-    @property
-    def south(self):
-        """
-        :return: south y value
-        """
-        return self.y + Grid.HEIGHT - 1
-
-    # ----------------------------------------
-
-    @property
-    def SE(self):
-        """
-        :return: southeast point: (x, y)
-        """
-        return self.east, self.south
-
-    # ----------------------------------------
-
-    @property
-    def SW(self):
-        """
-        :return: southwest point: (x, y)
-        """
-        return self.west, self.south
-
-    # ----------------------------------------
-
-    @property
-    def west(self):
-        """
-        :return: west x value
-        """
-        return self.x
-
-    # ----------------------------------------
-
-    @property
-    def xy(self):
-        """
-        :return: base point at top left: (x, y)
-        """
-        return self.x, self.y
+        if Grid.pointIsValid((x, y)):
+            x = x - Grid.XY_WEST
+            y = y - Grid.XY_NORTH
+            col = x // Cell.DIM
+            row = y // Cell.DIM
+            return col, row
+        else:
+            return None
 
     # ----------------------------------------
 
@@ -503,11 +466,10 @@ class Grid(object):
                 cell.path = None
 
         grid = copy.deepcopy(self.cells)
-        xGoal, yGoal = Grid.PATH_GOAL
-
         openSet = {}
         closedSet = {}
 
+        xGoal, yGoal = Grid.PATH_GOAL
         node = grid[xGoal][yGoal]
         node.parent = None
         openSet.update({Grid.PATH_GOAL: 0})
@@ -527,7 +489,7 @@ class Grid(object):
                     if index in closedSet: del closedSet[index]
                 if (not (index in openSet)) and (not (index in closedSet)):
                     node.gx = gx
-                    node.hx = Grid.hxDiagonal(Grid.PATH_GOAL, index)
+                    node.hx = Grid.hxDiagonal(index, Grid.PATH_GOAL)
                     node.parent = current
                     openSet.update({index: node.fx})
 
@@ -535,38 +497,6 @@ class Grid(object):
             for cell in lst:
                 x, y = cell.index
                 cell.path = grid[x][y].parent
-
-    # ----------------------------------------
-
-    def pointIsValid(self, point):
-        """
-        :param point: (x, y)
-        :return: true if point is within grid bounds
-        """
-        if bool(point):
-            x, y = point
-            xValid = bool(self.west <= x <= self.east)
-            yValid = bool(self.north <= y <= self.south)
-            return bool(xValid and yValid)
-        else:
-            return False
-
-    # ----------------------------------------
-
-    def pointToIndex(self, point):
-        """
-        :param point: (x, y)
-        :return: cell index: (column, row) at point, or None if point is outside bounds
-        """
-        if self.pointIsValid(point):
-            x, y = point
-            x = x - self.west
-            y = y - self.north
-            col = int(x // Cell.DIM)
-            row = int(y // Cell.DIM)
-            return col, row
-        else:
-            return None
 
     # ----------------------------------------
 
