@@ -164,7 +164,7 @@ class Game(object):
         self.mass = 20              # player health, game over if this reaches zero
         self.pause = True
         self.select = None          # index of selected cell
-        self.tick = 0               # time in ms of last clock tick
+        self.tick = 0               # time in ms of last frame
 
         self.statCreepsEscaped = 0
         self.statCreepsKilled = 0
@@ -191,7 +191,7 @@ class Game(object):
 
     # ----------------------------------------
 
-    def buildIsAllowed(self, index):
+    def buildable(self, index):
         """
         :param index: (column, row) where building will occur
         :return: true if building at index would not block all paths
@@ -238,8 +238,8 @@ class Game(object):
 
         x = x + 65
         y = (Display.HEADER // 2) - 18
-        rect = pygame.Rect(x, y, 282, 28)
-        self.display.window.blit(Display.IMAGES[img], rect)
+        # rect = pygame.Rect(x, y, 282, 28)
+        self.display.window.blit(Display.IMAGES[img], (x, y))
 
         # energy
         x = x + 330
@@ -279,8 +279,8 @@ class Game(object):
             img = Display.IMAGES[IMG_PAUSE]
 
         x1, y1, x2, y2 = Display.BTN_PLAY
-        rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
-        self.display.window.blit(img, rect)
+        # rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
+        self.display.window.blit(img, (x1, y1))
 
         # next button
         if self.wave < Game.WAVE_MAX:
@@ -288,8 +288,8 @@ class Game(object):
         else:
             img = Display.IMAGES[IMG_NEXT_INACTIVE]
         x1, y1, x2, y2 = Display.BTN_NEXT
-        rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
-        self.display.window.blit(img, rect)
+        # rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
+        self.display.window.blit(img, (x1, y1))
 
     # ----------------------------------------
 
@@ -319,7 +319,7 @@ class Game(object):
         if self.showGrid:
             for lst in self.grid.cells:
                 for cell in lst:
-                    if cell.base and cell.open:
+                    if cell.base and cell.pathable:
                         rect = (cell.west, cell.north, Cell.DIM, Cell.DIM)
                         pygame.draw.rect(self.display.window, Display.COLOR_GREY_1, rect, 1)
 
@@ -328,7 +328,8 @@ class Game(object):
         if bool(index):
             cell = self.grid[index]
             if cell.base and notNull(self.building):
-                if self.buildIsAllowed(index):
+                cell.buildable = self.buildable(index)
+                if cell.buildable:
                     color = Display.COLOR_GREEN
                 else:
                     color = Display.COLOR_RED
@@ -359,12 +360,8 @@ class Game(object):
         if self.showPath:
             if self.DEBUG:
                 for cell in self.grid:
-                    col, row = cell.index
-                    x, y = cell.NW
-                    rect = pygame.Rect(x, y, Cell.DIM, Cell.DIM)
-                    img = Display.IMAGES[IMG_PATH]
-
                     if bool(cell.path):
+                        col, row = cell.index
                         colTarget, rowTarget = cell.path
                         a = colTarget - col
                         b = row - rowTarget
@@ -372,37 +369,43 @@ class Game(object):
                     else:
                         angle = 0
 
-                    if angle != 0:
-                        img = pygame.transform.rotate(img, math.degrees(angle))
-                    self.display.window.blit(img, rect)
+                    if angle == 0:
+                        img = Display.IMAGES[IMG_PATH]
+                    else:
+                        img = Display.imgRotate(IMG_PATH, angle)
+
+                    self.display.window.blit(img, cell.NW)
             else:
                 for index in self.grid.path():
                     cell = self.grid[index]
+                    # rect = pygame.Rect(x, y, Cell.DIM, Cell.DIM)
                     pygame.draw.circle(self.display.window, Display.COLOR_ORANGE, cell.xy, 3)
 
         # towers
         if bool(self.towers):
             for _id, tower in self.towers.items():
                 x, y = self.grid[tower.index].NW
-                rect = pygame.Rect(x, y, Cell.DIM, Cell.DIM)
+                # rect = pygame.Rect(x, y, Cell.DIM, Cell.DIM)
                 img = Display.IMAGES[IMG_TOWER_BASE]
-                self.display.window.blit(img, rect)
+                self.display.window.blit(img, (x, y))
 
                 if tower.ai != 0:
-                    img = Display.IMAGES[tower.imgTower]
-                    if tower.angle != 0:
-                        img = pygame.transform.rotate(img, math.degrees(tower.angle))
-                    self.display.window.blit(img, rect)
+                    if tower.angle == 0:
+                        img = Display.IMAGES[tower.imgTower]
+                    else:
+                        img = Display.imgRotate(tower.imgTower, tower.angle)
+                    self.display.window.blit(img, (x, y))
 
         # creeps
         if bool(self.creeps):
             for _id, creep in self.creeps.items():
-                x, y = creep.NW
-                rect = pygame.Rect(x, y, creep._size, creep._size)
-                img = Display.IMAGES[creep.image]
-                if creep.angle != 0:
-                    img = pygame.transform.rotate(img, math.degrees(creep.angle))
-                self.display.window.blit(img, rect)
+
+                if creep.angle == 0:
+                    img = Display.IMAGES[creep.image]
+                else:
+                    img = Display.imgRotate(creep.image, creep.angle)
+                # rect = pygame.Rect(x, y, creep._size, creep._size)
+                self.display.window.blit(img, creep.NW)
 
     # ----------------------------------------
 
@@ -419,12 +422,11 @@ class Game(object):
         # new game button
         img = Display.IMAGES[IMG_NEW]
         x1, y1, x2, y2 = Display.BTN_NEW
-        rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
-        self.display.window.blit(img, rect)
+        # rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
+        self.display.window.blit(img, (x1, y1))
 
         # debug info
         if Game.DEBUG:
-
             x = Display.WIDTH - 140
             y = Display.HEIGHT - 30
             self.display.window.blit(self.display._text['TICK'], (x, y))
@@ -454,7 +456,7 @@ class Game(object):
                 cell = self.grid[index]
                 col, row = index
                 if cell.base:
-                    if notNull(self.building) and self.buildIsAllowed(index):
+                    if notNull(self.building) and cell.buildable:
                         cell.build = self.spawnTower(self.building, col, row)
                         self.grid.pathfinder()
                     elif notNull(cell.build):
@@ -655,7 +657,7 @@ class Game(object):
 
         cell = self.grid.cells[col][row]
         cell.build = tower
-        cell.open = False
+        cell.pathable = False
         cell.path = None
 
         self.towers.update({self._idTower: tower})

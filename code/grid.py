@@ -107,7 +107,7 @@ class Grid(object):
                 if bool(colBase and rowBase):
                     cell.base = True
                 if not rowBase:
-                    cell.open = False
+                    cell.pathable = False
 
                 if col >= Grid.BASE_EAST:
                     cell.gx = Cell.MOVE_COST
@@ -365,7 +365,7 @@ class Grid(object):
             row = rowBase + rowStep
             adj = (col, row)
             if Grid.indexIsValid(adj):
-                if self.cells[col][row].open:
+                if self.cells[col][row].pathable:
                     lst.append(adj)
 
         return lst
@@ -386,7 +386,7 @@ class Grid(object):
             row = rowBase + rowStep
             adj = (col, row)
             if Grid.indexIsValid(adj):
-                if self.cells[col][row].open:
+                if self.cells[col][row].pathable:
                     lst.append(adj)
 
         return lst
@@ -408,11 +408,11 @@ class Grid(object):
             row = rowBase + rowStep
             adj = (col, row)
             if Grid.indexIsValid(adj):
-                if self.cells[col][row].open:
+                if self.cells[col][row].pathable:
                     if n in Grid.ADJACENT_DIAG:
                         c1, r1 = (col, rowBase)
                         c2, r2 = (colBase, row)
-                        if self.cells[c1][r1].open and self.cells[c2][r2].open:
+                        if self.cells[c1][r1].pathable and self.cells[c2][r2].pathable:
                             lst.append(adj)
                     else:
                         lst.append(adj)

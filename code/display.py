@@ -11,6 +11,7 @@ from boolean import *
 from constant import *
 from grid import *
 
+import math
 import pygame
 from pygame.locals import *
 
@@ -135,3 +136,23 @@ class Display(object):
         pygame.display.set_icon(Display.IMAGES[IMG_ICON])
         self.window = pygame.display.set_mode((Display.WIDTH, Display.HEIGHT))
         pygame.display.set_caption('TOWER DEFENSE')
+
+    # ----------------------------------------
+
+    @classmethod
+    def imgRotate(cls, img, angle):
+        """
+        rotate image around center
+        :param img: image string
+        :param angle: angle in radians
+        :return: rotated image
+        """
+        img = Display.IMAGES[img]
+        imgRect = img.get_rect()
+
+        rotated = pygame.transform.rotate(img, math.degrees(angle))
+        rotatedRect = imgRect.copy()
+        rotatedRect.center = rotated.get_rect().center
+        rotated = rotated.subsurface(rotatedRect).copy()
+
+        return rotated

@@ -34,14 +34,15 @@ class Cell(object):
         self.x = 0
         self.y = 0
 
-        self.base = False       # true if cell within base bounds
-        self.gx = math.inf      # used for pathfinding
-        self.hx = math.inf      # used for pathfinding
-        self.parent = None      # used for pathfinding
+        self.base = False           # true if cell within base bounds
+        self.gx = math.inf          # used for pathfinding
+        self.hx = math.inf          # used for pathfinding
+        self.parent = None          # used for pathfinding
 
-        self.build = None       # if a tower is built here, holds tower _id
-        self.open = True        # true if cell is open for building / pathing
-        self.path = None        # if path is possible, holds destination index
+        self.build = None           # if a tower is built here, holds tower _id
+        self.buildable = True       # true if cell is open for building
+        self.path = None            # if path is possible, holds destination index
+        self.pathable = True        # true if cell is open for pathing
 
     # ----------------------------------------
 
@@ -170,5 +171,6 @@ class Cell(object):
         :return: reset cell to new game conditions
         """
         self.build = None
-        self.open = True
+        self.buildable = True
         self.path = None
+        self.pathable = True
