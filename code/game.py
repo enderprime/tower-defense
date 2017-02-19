@@ -27,11 +27,13 @@ class Game(object):
     """
 
     DEBUG = True           # debug mode for testing
-    FPS = 20                # frames per second
+    FPS = 25                # frames per second
     TICK = 1000 // FPS      # time in ms per game loop
 
+    BUILD_TIMER = 250      # cooldown in ms after building or validating path blocking
+
     WAVE_MAX = 100
-    WAVE_TIMER = 42         # seconds
+    WAVE_TIMER = 42         # cooldown in seconds between creep waves
 
     # creep waves: key = wave number, value = list of creep groups: (creep ai, creep count)
     WAVES = \
@@ -153,6 +155,7 @@ class Game(object):
         self.showPath = False
 
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000)
+        pygame.time.set_timer(pygame.USEREVENT + 2, Game.BUILD_TIMER)
 
         self._idCreep = 0           # creep id int
         self._idTower = 0           # tower id int
@@ -198,19 +201,27 @@ class Game(object):
         """
         cell = self.grid[index]
 
-        if bool(cell.build) and (cell.build.ai == 0):
-            return True
-        elif index in self.creepsByIndex:
+        if not cell.base:
             return False
-        else:
-            grid = copy.deepcopy(self.grid)
-            grid[index].open = False
-            grid.pathfinder()
-            for index in self.creepsByIndex.keys():
-                path = grid.path(index)
-                if (not bool(path)) or path[-1] != Grid.PATH_GOAL:
-                    return False
-            return True
+
+        if bool(cell.build):
+            if cell.build.ai == 0:
+                return True
+            else:
+                return False
+
+        if index in self.creepsByIndex:
+            return False
+
+        grid = copy.deepcopy(self.grid)
+        grid[index].pathable = False
+        grid.pathfinder()
+        for index in self.creepsByIndex.keys():
+            path = grid.path(index)
+            if (not bool(path)) or (path[-1] != Grid.PATH_GOAL):
+                return False
+
+        return True
 
     # ----------------------------------------
 
@@ -238,7 +249,6 @@ class Game(object):
 
         x = x + 65
         y = (Display.HEADER // 2) - 18
-        # rect = pygame.Rect(x, y, 282, 28)
         self.display.window.blit(Display.IMAGES[img], (x, y))
 
         # energy
@@ -279,7 +289,6 @@ class Game(object):
             img = Display.IMAGES[IMG_PAUSE]
 
         x1, y1, x2, y2 = Display.BTN_PLAY
-        # rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
         self.display.window.blit(img, (x1, y1))
 
         # next button
@@ -288,7 +297,6 @@ class Game(object):
         else:
             img = Display.IMAGES[IMG_NEXT_INACTIVE]
         x1, y1, x2, y2 = Display.BTN_NEXT
-        # rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
         self.display.window.blit(img, (x1, y1))
 
     # ----------------------------------------
@@ -328,7 +336,6 @@ class Game(object):
         if bool(index):
             cell = self.grid[index]
             if cell.base and notNull(self.building):
-                cell.buildable = self.buildable(index)
                 if cell.buildable:
                     color = Display.COLOR_GREEN
                 else:
@@ -378,14 +385,12 @@ class Game(object):
             else:
                 for index in self.grid.path():
                     cell = self.grid[index]
-                    # rect = pygame.Rect(x, y, Cell.DIM, Cell.DIM)
                     pygame.draw.circle(self.display.window, Display.COLOR_ORANGE, cell.xy, 3)
 
         # towers
         if bool(self.towers):
             for _id, tower in self.towers.items():
                 x, y = self.grid[tower.index].NW
-                # rect = pygame.Rect(x, y, Cell.DIM, Cell.DIM)
                 img = Display.IMAGES[IMG_TOWER_BASE]
                 self.display.window.blit(img, (x, y))
 
@@ -404,7 +409,6 @@ class Game(object):
                     img = Display.IMAGES[creep.image]
                 else:
                     img = Display.imgRotate(creep.image, creep.angle)
-                # rect = pygame.Rect(x, y, creep._size, creep._size)
                 self.display.window.blit(img, creep.NW)
 
     # ----------------------------------------
@@ -422,7 +426,6 @@ class Game(object):
         # new game button
         img = Display.IMAGES[IMG_NEW]
         x1, y1, x2, y2 = Display.BTN_NEW
-        # rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
         self.display.window.blit(img, (x1, y1))
 
         # debug info
@@ -454,11 +457,13 @@ class Game(object):
             index = Grid.pointToIndex(point)
             if bool(index):
                 cell = self.grid[index]
-                col, row = index
                 if cell.base:
-                    if notNull(self.building) and cell.buildable:
-                        cell.build = self.spawnTower(self.building, col, row)
-                        self.grid.pathfinder()
+                    if notNull(self.building):
+                        cell.buildable = self.buildable(index)
+                        if cell.buildable:
+                            col, row = index
+                            cell.build = self.spawnTower(self.building, col, row)
+                            self.grid.pathfinder()
                     elif notNull(cell.build):
                         self.select = index
             else:
@@ -542,9 +547,9 @@ class Game(object):
             if not self.pause:
                 for n in self.grid:
                     if n.build:
-                        n.open = False
+                        n.pathable = False
                     else:
-                        n.open = True
+                        n.pathable = True
                 self.updateCreeps()
 
             for event in pygame.event.get():
@@ -564,6 +569,11 @@ class Game(object):
                             self.waveTimer = self.waveTimer - 1
                             if self.waveTimer < 1:
                                 self.spawnWave()
+                elif event.type == USEREVENT + 2:
+                    index = Grid.pointToIndex(self.display.mouse)
+                    if bool(index) and notNull(self.building):
+                        cell = self.grid[index]
+                        cell.buildable = self.buildable(index)
 
             self.drawHeader()
             self.drawFooter()

@@ -9,7 +9,7 @@ tower defense game
 
 in development
 
-- 100 creep waves on timers, wih ramped stats and boss waves
+- 100 creep waves on timers, with ramped stats and boss waves
 - creep types: normal, fast, regen, shielded, splitter, swarm, carrier
 - 5 ranks per tower with ramped costs and stat improvements
 - tower types: gun, cannon, missle, dot, rail, cluster, support
