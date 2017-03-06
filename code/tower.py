@@ -4,7 +4,7 @@
 [D] tower defense tower class
 [E] ender.prime@gmail.com
 [F] tower.py
-[V] 02.19.17
+[V] 03.05.17
 """
 
 from boolean import *
@@ -18,26 +18,39 @@ class Tower(object):
     base class: buildable tower that kills creeps
     """
 
+    RANGE_1 = ((1, 1), (1, 0), (1, -1), (0, 1), (0, -1), (-1, 1), (-1, 0), (-1, -1))
+    RANGE_2 = ((2, 1), (2, 0), (2, -1),
+               (1, 2), (1, 1), (1, 0), (1, -1), (1, -2),
+               (0, 2), (0, 1), (0, -1), (0, -2),
+               (-1, 2), (-1, 1), (-1, 0), (-1, -1), (-1, -2),
+               (-2, 1), (-2, 0), (-2, -1))
+
+    # ----------------------------------------
+
     def __init__(self, _id):
 
         self._id = _id              # unique int, assigned on spawn
 
+        self.col = 0
+        self.row = 0
+        self.x = 0
+        self.y = 0
+
         self.ai = 0                 # tower type
         self.angle = 0.0
-        self.col = 0
-        self.cooldown = 1.0         # time between shots
-        self.cooldownLeft = 1.0
-        self.damage = 1             # damage per shot
+        self.cooldown = 1000        # time between shots in ms
+        self.cooldownLeft = 0
+        self.damage = 1             # damage per shot to primary target
         self.description = ''
         self.energy = 1             # energy required to build
         self.imgFire = ''
         self.imgHit = ''
         self.imgTower = ''
         self.name = ''
-        self.range = 1              # shot radius in cells
+        self.range = 1              # targeting range in cells
         self.rank = 1               # tower upgrade level
-        self.row = 0
-        self.splash = 0             # damage splash radius in cells
+        self.splashDamage = 0       # splash damage to adjacent
+        self.splashRadius = 0       # splash radius in cells
         self.target = 0             # creep _id
 
     # ----------------------------------------
@@ -51,15 +64,32 @@ class Tower(object):
 
     # ----------------------------------------
 
-    def spawn(self, col, row):
+    @property
+    def xy(self):
+        """
+        :return: base point at center: (x, y)
+        """
+        return self.x, self.y
+
+    # ----------------------------------------
+
+    def spawn(self, index, point):
         """
         add tower to game
-        :param col: column value
-        :param row: row value
+        :param index: (column, row)
+        :param point: (x, y)
         :return: none
         """
-        self.col = col
-        self.row = row
+        self.col, self.row = index
+        self.x, self.y = point
+
+    # ----------------------------------------
+
+    def track(self):
+        """
+        update rotation and target, and fire if cooldown is up
+        :return: none
+        """
 
 # --------------------------------------------------------------------------------------------------------------------
 
@@ -191,6 +221,6 @@ class TowerSupport(Tower):
         super(self.__class__, self).__init__(_id)
 
         self.ai = 8
-        self.imgTower = PATH_IMG + 'tower-8.png'
+        self.imgTower = PATH_IMG + 'tower-8-1.png'
 
     # ----------------------------------------

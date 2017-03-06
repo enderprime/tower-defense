@@ -4,7 +4,7 @@
 [D] tower defense game class
 [E] ender.prime@gmail.com
 [F] game.py
-[V] 02.19.17
+[V] 03.05.17
 """
 
 from boolean import *
@@ -18,6 +18,7 @@ import math
 import pygame
 from pygame.locals import *
 import sys
+import _thread as thread
 
 # --------------------------------------------------------------------------------------------------------------------
 
@@ -30,7 +31,7 @@ class Game(object):
     FPS = 25                # frames per second
     TICK = 1000 // FPS      # time in ms per game loop
 
-    BUILD_TIMER = 250      # cooldown in ms after building or validating path blocking
+    BUILD_TIMER = 250      # global cooldown in ms after validating path blocking
 
     WAVE_MAX = 100
     WAVE_TIMER = 42         # cooldown in seconds between creep waves
@@ -168,17 +169,19 @@ class Game(object):
         self.pause = True
         self.select = None          # index of selected cell
         self.tick = 0               # time in ms of last frame
-
-        self.statCreepsEscaped = 0
-        self.statCreepsKilled = 0
-        self.statCreepsSpawned = 0
-        self.statTowersBuilt = 0
-        self.statTowersSold = 0
-
         self.time = 0               # running time in seconds from start of new game
         self.towers = {}            # active towers in game
         self.wave = 0               # current creep wave
         self.waveTimer = 0          # countdown to next creep wave
+
+        self.stats = \
+            {
+                'CREEPS_ESCAPED':   0,
+                'CREEPS_KILLED':    0,
+                'CREEPS_SPAWNED':   0,
+                'TOWERS_BUILT':     0,
+                'TOWERS_SOLD':      0
+            }
 
     # ----------------------------------------
 
@@ -219,8 +222,10 @@ class Game(object):
         for index in self.creepsByIndex.keys():
             path = grid.path(index)
             if (not bool(path)) or (path[-1] != Grid.PATH_GOAL):
+                cell.buildable = False
                 return False
 
+        cell.buildable = True
         return True
 
     # ----------------------------------------
@@ -261,7 +266,7 @@ class Game(object):
         self.display.window.blit(text, (x, y))
 
         # wave number
-        x = x + 100
+        x = x + 110
         self.display.window.blit(self.display._text['WAVE'], (x, y))
 
         x = x + 70
@@ -380,7 +385,6 @@ class Game(object):
                         img = Display.IMAGES[IMG_PATH]
                     else:
                         img = Display.imgRotate(IMG_PATH, angle)
-
                     self.display.window.blit(img, cell.NW)
             else:
                 for index in self.grid.path():
@@ -404,12 +408,23 @@ class Game(object):
         # creeps
         if bool(self.creeps):
             for _id, creep in self.creeps.items():
-
                 if creep.angle == 0:
                     img = Display.IMAGES[creep.image]
                 else:
                     img = Display.imgRotate(creep.image, creep.angle)
                 self.display.window.blit(img, creep.NW)
+
+                if self.showHealth:
+                    color = Display.COLOR_RED
+                    x, y = creep.NW
+                    x = x + ((Cell.DIM - 28) // 2)
+                    y = y - 3
+                    pygame.draw.line(self.display.window, color, (x, y), (x + 28, y), 2)
+
+                    color = Display.COLOR_GREEN
+                    width = 28 * creep.massCurrent / creep.massMax
+                    pygame.draw.line(self.display.window, color, (x, y), (x + width, y), 2)
+
 
     # ----------------------------------------
 
@@ -461,8 +476,7 @@ class Game(object):
                     if notNull(self.building):
                         cell.buildable = self.buildable(index)
                         if cell.buildable:
-                            col, row = index
-                            cell.build = self.spawnTower(self.building, col, row)
+                            cell.build = self.spawnTower(self.building, index)
                             self.grid.pathfinder()
                     elif notNull(cell.build):
                         self.select = index
@@ -505,6 +519,7 @@ class Game(object):
         elif key == K_7: self.building = 7
         elif key == K_8: self.building = 8
         elif key == K_g: self.showGrid = not self.showGrid
+        elif key == K_h: self.showHealth = not self.showHealth
         elif key == K_n: self.spawnWave()
         elif key == K_p: self.showPath = not self.showPath
 
@@ -551,6 +566,7 @@ class Game(object):
                     else:
                         n.pathable = True
                 self.updateCreeps()
+                self.updateTowers()
 
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -572,8 +588,7 @@ class Game(object):
                 elif event.type == USEREVENT + 2:
                     index = Grid.pointToIndex(self.display.mouse)
                     if bool(index) and notNull(self.building):
-                        cell = self.grid[index]
-                        cell.buildable = self.buildable(index)
+                        thread.start_new_thread(self.buildable, (index, ))
 
             self.drawHeader()
             self.drawFooter()
@@ -605,17 +620,19 @@ class Game(object):
         self.mass = 20
         self.pause = True
         self.select = None
-
-        self.statCreepsSpawned = 0
-        self.statCreepsEscaped = 0
-        self.statCreepsKilled = 0
-        self.statTowersBuilt = 0
-        self.statTowersSold = 0
-
         self.time = 0
         self.towers = {}
         self.wave = 0
         self.waveTimer = 0
+
+        self.stats = \
+            {
+                'CREEPS_ESCAPED':   0,
+                'CREEPS_KILLED':    0,
+                'CREEPS_SPAWNED':   0,
+                'TOWERS_BUILT':     0,
+                'TOWERS_SOLD':      0
+            }
 
         self.loop()
 
@@ -636,18 +653,17 @@ class Game(object):
 
         creep.spawn(self.wave)
         self.creeps.update({self._idCreep: creep})
-        self.statCreepsSpawned = self.statCreepsSpawned + 1
+        self.stats['CREEPS_SPAWNED'] = self.stats['CREEPS_SPAWNED'] + 1
 
         return creep
 
     # ----------------------------------------
 
-    def spawnTower(self, ai, col, row):
+    def spawnTower(self, ai, index):
         """
         add tower to game
         :param ai: tower type
-        :param col: column value
-        :param row: row value
+        :param index: (column, row)
         :return: tower object reference
         """
         self._idTower = self._idTower + 1
@@ -663,7 +679,9 @@ class Game(object):
         elif ai == 8:   tower = TowerSupport(self._idTower)
         else:           tower = TowerBase(self._idTower)
 
-        tower.spawn(col, row)
+        col, row = index
+        point = self.grid.indexToPoint(index)
+        tower.spawn(index, point)
 
         cell = self.grid.cells[col][row]
         cell.build = tower
@@ -671,7 +689,7 @@ class Game(object):
         cell.path = None
 
         self.towers.update({self._idTower: tower})
-        self.statTowersBuilt = self.statTowersBuilt + 1
+        self.stats['TOWERS_BUILT'] = self.stats['TOWERS_BUILT'] + 1
 
         return tower
 
@@ -708,12 +726,11 @@ class Game(object):
 
         if bool(self.creeps):
             for _id, creep in self.creeps.items():
-
                 if creep.x > (Grid.XY_EAST + creep._half):
                     removeCreeps.append(_id)
                     if not Game.DEBUG:
                         self.mass = self.mass - creep.damage
-                    self.statCreepsEscaped = self.statCreepsEscaped + 1
+                    self.stats['CREEPS_ESCAPED'] = self.stats['CREEPS_ESCAPED'] + 1
                 else:
                     creep.move(self.grid, self.delta)
                     if bool(creep.index):
@@ -724,3 +741,16 @@ class Game(object):
 
             for n in removeCreeps:
                 del self.creeps[n]
+
+    # ----------------------------------------
+
+    def updateTowers(self):
+        """
+        update rotation and target for all towers, and fire if cooldown is up
+        :return: none
+        """
+        if bool(self.towers):
+            for _id, tower in self.towers.items():
+                if tower.ai > 0:
+                    pass
+

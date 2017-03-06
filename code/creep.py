@@ -4,7 +4,7 @@
 [D] tower defense creep class
 [E] ender.prime@gmail.com
 [F] creep.py
-[V] 02.19.17
+[V] 03.05.17
 """
 
 from boolean import *
@@ -26,21 +26,23 @@ class Creep(object):
         self._size = 48             # creep size in pixels
         self._half = 24             # half size in pixels
 
+        self.index = None
+        self.x = 0.0
+        self.y = 0.0
+
         self.ai = 0                 # creep type
         self.angle = 0.0
         self.damage = 1             # mass lost if escaped
         self.description = ''
         self.energy = 1             # energy gained if killed
         self.image = ''
-        self.index = None
-        self.mass = 1               # damage required to kill
+        self.massCurrent = 1        # current health remaining
+        self.massMax = 1            # total damage required to kill
         self.name = ''
         self.rank = 1               # creep level
         self.speedCurrent = 50      # pixels per second
         self.speedMax = 50
         self.target = None          # index of next cell to visit
-        self.x = 0.0
-        self.y = 0.0
 
     # ----------------------------------------
 
@@ -149,7 +151,8 @@ class Creep(object):
             self.x = self.x + distMove
         else:
             self.index = Grid.pointToIndex(self.xy)
-            self.target = grid[self.index].path
+            if not bool(self.target):
+                self.target = grid[self.index].path
             xTarget, yTarget = grid.indexToPoint(self.target)
             a = xTarget - self.x
             b = self.y - yTarget
@@ -161,12 +164,13 @@ class Creep(object):
                 y = distMove * math.sin(self.angle)
                 self.x = self.x + x
                 self.y = self.y - y
-            elif self.x > Grid.XY_BASE_EAST:
-                self.angle = 0.0
-                self.x = self.x + distMove
             else:
+                self.x = xTarget
+                self.y = yTarget
+                distMove = distMove - distTarget
+                self.index = Grid.pointToIndex(self.xy)
                 self.target = grid[self.index].path
-                xTarget, yTarget = Grid.indexToPoint(self.target)
+                xTarget, yTarget = grid.indexToPoint(self.target)
                 a = xTarget - self.x
                 b = self.y - yTarget
                 self.angle = math.atan2(b, a)
@@ -182,7 +186,6 @@ class Creep(object):
         add creep to game
         :return: none
         """
-        self.rank = wave
         self.x = - random.randint(100, 800)
         self.y = random.randint(Grid.XY_NORTH + 100, Grid.XY_SOUTH - 100)
 
@@ -200,6 +203,32 @@ class CreepScout(Creep):
 
     # ----------------------------------------
 
+    def move(self, grid, delta):
+        """
+        update creep location and target
+        :param grid: current grid reference
+        :param delta: game loop delta time in ms
+        :return: none
+        """
+        distMove = max(1, self.speedCurrent) * delta / 1000
+
+        if (self.x <= 0) or (self.x > Grid.XY_BASE_EAST):
+            self.angle = 0.0
+            self.x = self.x + distMove
+        else:
+            self.index = Grid.pointToIndex(self.xy)
+            self.target = grid[self.index].path
+            xTarget, yTarget = grid.indexToPoint(self.target)
+            a = xTarget - self.x
+            b = self.y - yTarget
+            self.angle = math.atan2(b, a)
+            x = distMove * math.cos(self.angle)
+            y = distMove * math.sin(self.angle)
+            self.x = self.x + x
+            self.y = self.y - y
+
+    # ----------------------------------------
+
     def spawn(self, wave):
         """
         add creep to game
@@ -207,5 +236,7 @@ class CreepScout(Creep):
         """
         super(self.__class__, self).spawn(wave)
 
-        self.energy = (wave // 5) + 1
-        self.mass = (5 * wave) + 20
+        self.rank = wave
+        self.energy = (self.rank // 5) + 1
+        self.massMax = (5 * self.rank) + 20
+        self.massCurrent = self.massMax

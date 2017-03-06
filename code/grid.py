@@ -4,7 +4,7 @@
 [D] tower defense grid class
 [E] ender.prime@gmail.com
 [F] grid.py
-[V] 02.19.17
+[V] 03.05.17
 """
 
 from boolean import *
@@ -108,9 +108,6 @@ class Grid(object):
                     cell.base = True
                 if not rowBase:
                     cell.pathable = False
-
-                if col >= Grid.BASE_EAST:
-                    cell.gx = Cell.MOVE_COST
 
                 lst.append(cell)
             self.cells.append(lst)
@@ -337,14 +334,12 @@ class Grid(object):
         :return: cell index: (column, row) at point, or None if point is outside bounds
         """
         x, y = point
-        x = int(round(x, 0))
-        y = int(round(y, 0))
 
         if Grid.pointIsValid((x, y)):
             x = x - Grid.XY_WEST
             y = y - Grid.XY_NORTH
-            col = x // Cell.DIM
-            row = y // Cell.DIM
+            col = int(round(x // Cell.DIM, 0))
+            row = int(round(y // Cell.DIM, 0))
             return col, row
         else:
             return None

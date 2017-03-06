@@ -4,7 +4,7 @@
 [D] tower defense cell class
 [E] ender.prime@gmail.com
 [F] cell.py
-[V] 02.19.17
+[V] 03.05.17
 """
 
 from boolean import *

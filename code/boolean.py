@@ -4,7 +4,7 @@
 [D] predicate functions
 [E] ender.prime@gmail.com
 [F] boolean.py
-[V] 02.17.17
+[V] 02.25.17
 """
 
 def isBool(v):   return type(v) is bool
@@ -16,7 +16,7 @@ def isList(v):   return type(v) is list
 def isNeg(n):    return n < 0
 def isNull(v):   return v is None
 def isNum(v):    return (type(v) is float) or (type(v) is int)
-def isOdd(i):    return not ((i % 2) == 0)
+def isOdd(i):    return (i % 2) == 1
 def isOne(n):    return n == 1
 def isPos(n):    return n >= 0
 def isStr(v):    return type(v) is str

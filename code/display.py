@@ -4,7 +4,7 @@
 [D] tower defense cell class
 [E] ender.prime@gmail.com
 [F] display.py
-[V] 02.19.17
+[V] 02.25.17
 """
 
 from boolean import *
@@ -105,7 +105,7 @@ class Display(object):
             IMG_TOWER_5_1: pygame.image.load(IMG_TOWER_5_1),
             IMG_TOWER_6_1: pygame.image.load(IMG_TOWER_6_1),
             IMG_TOWER_7_1: pygame.image.load(IMG_TOWER_7_1),
-            IMG_TOWER_8: pygame.image.load(IMG_TOWER_8),
+            IMG_TOWER_8_1: pygame.image.load(IMG_TOWER_8_1),
             IMG_TOWER_BASE: pygame.image.load(IMG_TOWER_BASE)
         }
 
